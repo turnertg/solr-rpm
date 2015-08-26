@@ -71,8 +71,13 @@ LOCAL_SHA1=$(openssl sha1 SOURCES/solr-$SOLR_VERSION.tgz)
 LOCAL_SHA1="${BASH_REMATCH[1]}"
 
 if [ $LOCAL_SHA1 == $SHA1 ]; then
-  echo "SHA1 for SOURCES/solr-$SOLR_VERSION.tgz checks out"
+  echo "SHA1 for SOURCES/solr-$SOLR_VERSION.tgz checks out: $SHA1"
 else
   echo "ERROR! SOURCES/solr-$SOLR_VERSION.tgz has become corrupted or been tampered with.  Delete it and re-run this script."
   exit $EX_DATAERR
 fi
+
+# Now that the sources are downloaded and verified we can actually make the RPM.
+# _topdir and _tmppath are magic rpm variables that can be defined in ~/.rpmmacros
+# For ease of reliable builds they are defined here on the command line.
+rpmbuild -ba --define="_topdir $PWD" --define="_tmppath $PWD/tmp" --define="solr_version $SOLR_VERSION" --define="rpm_release $RPM_RELEASE" SPECS/solr.spec
