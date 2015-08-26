@@ -19,6 +19,23 @@ fi
 SOLR_VERSION="$1"
 RPM_RELEASE="$2"
 
+# validate the inputs
+if [[ "$SOLR_VERSION" =~ ^5\.[0-9]+\.[0-9]+$ ]]
+then
+  echo "Using Solr version: $SOLR_VERSION"
+else
+  echo "Invalid Solr version format.  Must be of the form 5.x.x"
+  exit $EX_USAGE
+fi
+
+if [[ "$RPM_RELEASE" =~ ^[0-9]+$ ]]
+then
+  echo "Building rpm version: $RPM_RELEASE"
+else
+  echo "Invalid release version format.  Must be a single number"
+  exit $EX_USAGE
+fi
+
 # clean the working directories
 rm -rf BUILD RPMS SRPMS tmp || true
 mkdir -p BUILD RPMS SRPMS tmp
@@ -50,15 +67,13 @@ fi
 # verify the integrity of the archive
 # the sha1 file has the file name at the end, so use a regex to just pull the sha1 part out of the file
 SHA1=$(<SOURCES/solr-$SOLR_VERSION.tgz.sha1)
-SHA1_REGEX="^([0-9a-f]+)"
-[[ $SHA1 =~ $SHA1_REGEX ]]
+[[ $SHA1 =~ ^([0-9a-f]+) ]]
 SHA1="${BASH_REMATCH[1]}"
 
 # use openssl to generate the sha1 for the local archive
 LOCAL_SHA1=$(openssl sha1 SOURCES/solr-$SOLR_VERSION.tgz)
 # openssl puts the file name at the beginning, so use another regex to pull just the sha1
-SHA1_REGEX="([0-9a-f]+)$"
-[[ $LOCAL_SHA1 =~ $SHA1_REGEX ]]
+[[ $LOCAL_SHA1 =~ ([0-9a-f]+)$ ]]
 LOCAL_SHA1="${BASH_REMATCH[1]}"
 
 if [ $LOCAL_SHA1 == $SHA1 ]
