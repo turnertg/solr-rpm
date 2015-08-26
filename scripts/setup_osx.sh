@@ -8,13 +8,13 @@ EX_CONFIG=78
 # check for fink
 if hash fink 2>/dev/null; then
   echo -e "\nERROR: You appear to have fink installed.  This setup script only works with brew." 1>&2
-  exit EX_CONFIG
+  exit $EX_CONFIG
 fi
 
 # check for macports
 if hash port 2>/dev/null; then
   echo -e "\nERROR: You appear to have macports installed.  This setup script only works with brew." 1>&2
-  exit EX_CONFIG
+  exit $EX_CONFIG
 fi
 
 # check for brew

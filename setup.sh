@@ -24,5 +24,5 @@ if [[ $proc_version == *"Darwin"* ]]; then
 #  distro=SUSE
 else
   echo -e "\nERROR: Your OS ($proc_version) is not yet supported by this script!\nYou'll need to setup the rpm build environment manually.\n" 1>&2
-  exit EX_CONFIG
+  exit $EX_CONFIG
 fi
