@@ -1,4 +1,4 @@
-# Copyright © 2015 Jason Stafford
+# Copyright (c) 2015 Jason Stafford
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -37,7 +37,7 @@ URL:            http://lucene.apache.org/solr/
 Group:          System Environment/Daemons
 License:        Apache License, Version 2.0
 BuildRoot:      %{_tmppath}/build-%{name}-%{version}
-Requires:       unzip, awk, lsof, java >= 1.7.0
+Requires:       unzip, gawk, lsof, java >= 1.7.0
 BuildArch:      noarch
 Vendor:         Apache Software Foundation
 
