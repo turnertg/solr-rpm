@@ -29,8 +29,9 @@ if [[ $proc_version == *"Darwin"* ]]; then
   exit $?
 #elif [[ $proc_version == *"Debian"* ]]; then
 #  distro=Debian
-#elif [[ $proc_version == *"Red Hat"* ]]; then
-#  distro=RedHat
+elif [[ $proc_version == *"Red Hat"* ]]; then
+  /bin/bash scripts/setup_redhat.sh
+  exit $?
 #elif [[ $proc_version == *"Ubuntu"* ]]; then
 #  distro=Ubuntu
 #elif [[ $proc_version == *"SUSE"* ]]; then
