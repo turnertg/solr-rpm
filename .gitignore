@@ -14,12 +14,12 @@
 # ignore Mac-specific files
 .DS_Store
 
-# ignore downloaded files in the SOURCES directory
-SOURCES/solr-*.tgz
-SOURCES/solr-*.tgz.sha1
-
-# Ignore the build directories
+# Ignore the build and sources directories
 BUILD/
 RPMS/
 SRPMS/
 tmp/
+SOURCES/
+
+# Ignore Visual Studio Code files.
+.vscode
