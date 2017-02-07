@@ -24,13 +24,38 @@ else
   proc_version=`uname -a`
 fi
 
-if [[ $proc_version == *"Darwin"* ]]; then
-  /bin/bash scripts/setup_osx.sh
-  exit $?
-elif [[ $proc_version == *"Red Hat"* ]]; then
-  /bin/bash scripts/setup_redhat.sh
-  exit $?
-else
-  echo -e "\nERROR: Your OS ($proc_version) is not yet supported by this script!\nYou'll need to setup the rpm build environment manually.\n" 1>&2
+if [[ $proc_version != *"Red Hat"* ]]; then
+  echo -e "\nERROR: Your OS is not yet supported by this script!\nYou'll need to setup the rpm build environment manually.\n" 1>&2
   exit $EX_CONFIG
+fi
+
+if [ "$EUID" -gt 0 ]; then
+  echo "Please run this script as root as we *may* need to install packages."
+  exit $EX_CONFIG
+fi
+
+# the following join function comes from
+# http://stackoverflow.com/questions/1527049/bash-join-elements-of-an-array
+function join { local IFS="$1"; shift; echo "$*"; }
+
+PACKAGES=()
+
+# check for wget
+if ! hash wget 2>/dev/null; then
+  PACKAGES+=("wget")
+fi
+
+# openssl is used to calculate sha1 verify sources 
+if ! hash openssl 2>/dev/null; then
+  PACKAGES+=("openssl")
+fi
+
+# check for rpmbuild
+if ! hash rpmbuild 2>/dev/null; then
+  PACKAGES+=("rpm-build")
+fi
+
+if [ ${#PACKAGES[@]} -gt 0 ]; then
+  PACKAGES_STRING=$(join " " "${PACKAGES[@]}")
+  yum install "$PACKAGES_STRING"
 fi
