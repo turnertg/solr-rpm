@@ -50,30 +50,22 @@ if [ "$system_repo_count" -ne "$needed_repo_count" ]; then
   exit $EX_CONFIG
 fi
 
-PACKAGES=()
+PACKAGES_NEEDED=('wget' 'openssl' 'rpm-build' 'mock' '')
+PACKAGES_TO_INSTALL=()
 
-# check for wget
-if ! hash wget 2>/dev/null; then
-  PACKAGES+=("wget")
-fi
+for pkg in ${PACKAGES_NEEDED[@]}; do
+  echo "Checking '${pkg}'..."
+  yum list installed | grep -o ${pkg} &>/dev/null
+  if [ "$?" -ne "0" ]; then
+    PACKAGES_TO_INSTALL+=($pkg)
+    echo -n ' To be installed'
+  else
+    echo -n ' Installed'
+  fi
+done
 
-# openssl is used to calculate sha1 verify sources 
-if ! hash openssl 2>/dev/null; then
-  PACKAGES+=("openssl")
-fi
-
-# check for rpmbuild
-if ! hash rpmbuild 2>/dev/null; then
-  PACKAGES+=("rpm-build")
-fi
-
-# check for mock
-if ! hash mock 2>/dev/null; then
-  PACKAGES+=("mock")
-fi
-
-if [ ${#PACKAGES[@]} -gt 0 ]; then
-  PACKAGES_STRING=$(join " " "${PACKAGES[@]}")
+if [ ${#PACKAGES_TO_INSTALL[@]} -gt 0 ]; then
+  PACKAGES_STRING=$(join " " "${PACKAGES_TO_INSTALL[@]}")
   yum install -y "$PACKAGES_STRING"
 fi
 
