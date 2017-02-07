@@ -1,5 +1,5 @@
 # solr-rpm
-Code to build an RPM for Apache Solr 5.x.x
+Code to build an RPM for Apache Solr x.x.x
 
 To use, first setup your development environment by running
 
@@ -10,7 +10,7 @@ Once that is done you can build an RPM by running
     ./build.sh 5.3.0 1
 
 The version '5.3.0' can be replaced with any released version of Solr in the
-5.x.x series.  The '1' is the version of the RPM itself.
+x.x.x series.  The '1' is the version of the RPM itself.
 
 Copyright © 2015 Jason Stafford
 
