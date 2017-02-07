@@ -27,15 +27,9 @@ fi
 if [[ $proc_version == *"Darwin"* ]]; then
   /bin/bash scripts/setup_osx.sh
   exit $?
-#elif [[ $proc_version == *"Debian"* ]]; then
-#  distro=Debian
 elif [[ $proc_version == *"Red Hat"* ]]; then
   /bin/bash scripts/setup_redhat.sh
   exit $?
-#elif [[ $proc_version == *"Ubuntu"* ]]; then
-#  distro=Ubuntu
-#elif [[ $proc_version == *"SUSE"* ]]; then
-#  distro=SUSE
 else
   echo -e "\nERROR: Your OS ($proc_version) is not yet supported by this script!\nYou'll need to setup the rpm build environment manually.\n" 1>&2
   exit $EX_CONFIG

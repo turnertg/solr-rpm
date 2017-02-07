@@ -24,9 +24,9 @@ if ! hash wget 2>/dev/null; then
   PACKAGES+=("wget")
 fi
 
-# check for hxwls
-if ! hash hxwls 2>/dev/null; then
-  PACKAGES+=("html-xml-utils")
+# openssl is used to calculate sha1 verify sources 
+if ! hash openssl 2>/dev/null; then
+  PACKAGES+=("openssl")
 fi
 
 # check for rpmbuild

@@ -30,6 +30,12 @@ if hash port 2>/dev/null; then
   exit $EX_CONFIG
 fi
 
+# Check if Ruby is installed.
+if ! hash ruby 2>/dev/null; then
+  echo "\nERROR: Ruby needs to be installed. It is needed to install brew, if not there on your system." 1>&2
+  exit $EX_CONFIG
+fi
+
 # check for brew
 if ! hash brew 2>/dev/null; then
   #install brew
@@ -49,4 +55,9 @@ fi
 # check for rpmbuild
 if ! hash rpmbuild 2>/dev/null; then
   brew install rpm
+fi
+
+# check for openssl
+if ! hash openssl 2>/dev/null; then
+  brew install openssl
 fi
