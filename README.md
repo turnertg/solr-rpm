@@ -3,7 +3,7 @@ Code to build an RPM for Apache Solr x.x.x on Red Hat and derivative OSes.
 
 To use, first setup your development environment by running
 
-    ./setup.sh
+    sudo ./setup.sh
 
 Once that is done you can build an RPM by running
 
