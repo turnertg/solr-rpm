@@ -18,6 +18,10 @@
 #		or miscon­figured state.
 EX_CONFIG=78
 
+# the following join function comes from
+# http://stackoverflow.com/questions/1527049/bash-join-elements-of-an-array
+function join { local IFS="$1"; shift; echo "$*"; }
+
 if [ -f "/proc/version" ]; then
   proc_version=`cat /proc/version`
 else
@@ -35,16 +39,16 @@ if [ "$EUID" -gt 0 ]; then
 fi
 
 # Make sure we have the repos enabled, other wise the install step will fail.
-have_repos=$(yum repolist | grep -oE 'epel|extras' &> /dev/null)
-echo "$have_repos"
-if [ $have_repos -ne 0 ]; then
-  echo "Please make sure epel and extras repos are enabled as they are needed to install some packages."
-  echo "Reference: https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html/Deployment_Guide/sec-Managing_Yum_Repositories.html"
-fi
+repos=('epel' 'extras')
+repo_string=$(join "|" "${repos[@]}")
+needed_repo_count="${#repos[*]}"
+system_repo_count=$(yum repolist | grep -oE "${repo_string}" | sort -u | wc -l)
 
-# the following join function comes from
-# http://stackoverflow.com/questions/1527049/bash-join-elements-of-an-array
-function join { local IFS="$1"; shift; echo "$*"; }
+if [ "$system_repo_count" -ne "$needed_repo_count" ]; then
+  echo "Please make sure following repos are enabled as they are needed to install some packages: ${repo_string}"
+  echo "Reference: https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html/Deployment_Guide/sec-Managing_Yum_Repositories.html"
+  exit $EX_CONFIG
+fi
 
 PACKAGES=()
 
@@ -70,5 +74,7 @@ fi
 
 if [ ${#PACKAGES[@]} -gt 0 ]; then
   PACKAGES_STRING=$(join " " "${PACKAGES[@]}")
-  yum install "$PACKAGES_STRING"
+  yum install -y "$PACKAGES_STRING"
 fi
+
+echo "Setup completed. Please run build.sh."
