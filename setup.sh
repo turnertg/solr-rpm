@@ -55,6 +55,11 @@ if ! hash rpmbuild 2>/dev/null; then
   PACKAGES+=("rpm-build")
 fi
 
+# check for mock
+if ! hash mock 2>/dev/null; then
+  PACKAGES+=("mock")
+fi
+
 if [ ${#PACKAGES[@]} -gt 0 ]; then
   PACKAGES_STRING=$(join " " "${PACKAGES[@]}")
   yum install "$PACKAGES_STRING"
