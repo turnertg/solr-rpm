@@ -1,5 +1,5 @@
 # solr-rpm
-Code to build an RPM for Apache Solr x.x.x
+Code to build an RPM for Apache Solr x.x.x on Red Hat and derivative OSes.
 
 To use, first setup your development environment by running
 
