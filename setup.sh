@@ -54,13 +54,13 @@ PACKAGES_NEEDED=('wget' 'openssl' 'rpm-build' 'mock' '')
 PACKAGES_TO_INSTALL=()
 
 for pkg in ${PACKAGES_NEEDED[@]}; do
-  echo "Checking '${pkg}'..."
+  echo -n "Checking '${pkg}'..."
   yum list installed | grep -o ${pkg} &>/dev/null
   if [ "$?" -ne "0" ]; then
     PACKAGES_TO_INSTALL+=($pkg)
-    echo -n ' To be installed'
+    echo ' To be installed'
   else
-    echo -n ' Installed'
+    echo ' Installed'
   fi
 done
 
