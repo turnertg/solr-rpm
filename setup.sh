@@ -34,6 +34,13 @@ if [ "$EUID" -gt 0 ]; then
   exit $EX_CONFIG
 fi
 
+# Make sure we have the repos enabled, other wise the install step will fail.
+yum repolist | grep -oE 'epel|extras' &> /dev/null
+if [ "$?" -ne 0 ]; then
+  echo "Please make sure epel and extras repos are enabled as they are needed to install some packages."
+  echo "Reference: https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html/Deployment_Guide/sec-Managing_Yum_Repositories.html"
+fi
+
 # the following join function comes from
 # http://stackoverflow.com/questions/1527049/bash-join-elements-of-an-array
 function join { local IFS="$1"; shift; echo "$*"; }
