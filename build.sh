@@ -22,6 +22,18 @@ EX_USAGE=64
 #		This should only be used for user's data & not
 #		system files.
 EX_DATAERR=65
+# EX_OSERR -- An operating system error has been detected.
+#		This is intended to be used for such things as "cannot
+#		fork", "cannot create pipe", or the like.  It includes
+#		things like getuid returning a user that does not
+#		exist in the passwd file.
+EX_OSERR=71
+
+if [ $EUID -eq 0 ]; then
+  echo 'Please do not run this script as root.'
+  echo 'See https://fedoraproject.org/wiki/How_to_create_an_RPM_package#Preparing_your_system for details.'
+  exit $EX_OSERR
+fi
 
 if [ $# -ne 2 ]; then
   echo "Exactly two arguments are required. For example './build.sh 5.3.0 1' where '5.3.0' can be replaced by any released version of Solr and the second parameter is the version of the rpm itself"
