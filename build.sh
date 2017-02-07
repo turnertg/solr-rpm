@@ -32,10 +32,10 @@ SOLR_VERSION="$1"
 RPM_RELEASE="$2"
 
 # validate the inputs
-if [[ "$SOLR_VERSION" =~ ^5\.[0-9]+\.[0-9]+$ ]]; then
+if [[ "$SOLR_VERSION" =~ ^[0-9]\.[0-9]+\.[0-9]+$ ]]; then
   echo "Using Solr version: $SOLR_VERSION"
 else
-  echo "Invalid Solr version format.  Must be of the form 5.x.x"
+  echo "Invalid Solr version format.  Must be of the form x.x.x"
   exit $EX_USAGE
 fi
 
@@ -46,24 +46,20 @@ else
   exit $EX_USAGE
 fi
 
-# clean the working directories
+# clean the working directories. Do not remove SOURCES dir if it is already there.
 rm -rf BUILD RPMS SRPMS tmp || true
-mkdir -p BUILD RPMS SRPMS tmp
-
-# download the sources
-if [ ! -d SOURCES ]; then
-  mkdir SOURCES
-fi
+mkdir -p BUILD RPMS SRPMS SOURCES tmp
 
 if [ ! -f SOURCES/solr-$SOLR_VERSION.tgz ]; then
+  mirrors='tmp/mirrors.html'
   # download the list of mirror sites
-  wget -O tmp/mirrors.html http://www.apache.org/dyn/closer.cgi/lucene/solr/$SOLR_VERSION
-  # use hxwls from the w3.org html-xml-utils package to get the links out of the html file
-  ALL_LINKS=$(hxwls tmp/mirrors.html)
+  wget -O $mirrors http://www.apache.org/dyn/closer.cgi/lucene/solr/$SOLR_VERSION
   # grab the fist link that contains the version we are looking for
-  DOWNLOAD_LINK=$(grep -m 1 "$SOLR_VERSION" <<< "$ALL_LINKS")
+  download_link=$(grep -om 1 -E "<a href=\"http.+$SOLR_VERSION\">" $mirrors | grep -oE "http.+$SOLR_VERSION")
   # actually download the archive from the mirror
-  wget -O SOURCES/solr-$SOLR_VERSION.tgz $DOWNLOAD_LINK/solr-$SOLR_VERSION.tgz
+  wget -O SOURCES/solr-$SOLR_VERSION.tgz $download_link/solr-$SOLR_VERSION.tgz
+  # remove the tmp file.
+  rm $mirrors
 fi
 
 # get the SHA1 from Apache directly
