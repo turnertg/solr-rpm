@@ -11,6 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Some documentation to help reduce time to search
+# https://fedoraproject.org/wiki/How_to_create_an_RPM_package#SPEC_file_overview
+
 # Disable repacking of jars, since it takes forever
 # and it is not needed since there are no platform dependent jars in the archive
 %define __jar_repack %{nil}
@@ -30,23 +33,26 @@
 Name:           solr
 Version:        %{solr_version}
 Release:        %{rpm_release}
-Summary:        APACHE SOLR™ %{solr_version}
+Summary:        Solr is the popular, blazing-fast, open source enterprise search platform built on Apache Lucene™
 Source:         solr-%{solr_version}.tgz
-Source1:        distro.sh
 URL:            http://lucene.apache.org/solr/
 Group:          System Environment/Daemons
 License:        Apache License, Version 2.0
 BuildRoot:      %{_tmppath}/build-%{name}-%{version}
-Requires:       unzip, gawk, lsof, java >= 1.7.0
+Requires:       java-1.8.0-openjdk-headless >= 1.8.0, systemd
 BuildArch:      noarch
 Vendor:         Apache Software Foundation
 
 %description
-Solr is the popular, blazing-fast, open source enterprise search platform built on Apache Lucene™.
+Solr is an open source enterprise search server based on the Lucene Java search
+library, with XML/HTTP and JSON APIs, hit highlighting, faceted search,
+caching, replication, and a web administration interface. It runs in a Java 
+servlet container such as Jetty.
+
+This package provides binaries from the official website in RPM form.
 
 %prep
 %setup -q -c
-cp %{SOURCE1} .
 
 %build
 
@@ -85,16 +91,13 @@ sed -i.tmp -e "$sed_expr1" -e "$sed_expr2" -e "$sed_expr3" -e "$sed_expr4" %{bui
 rm -f %{buildroot}/etc/init.d/%{solr_service}.tmp
 
 %pre
-source distro.sh
-solr_uid=`id -u %{solr_user}`
-if [ $? -ne 0 ]; then
-  if [ "$distro" == "RedHat" ]; then
-    adduser %{solr_user}
-  elif [ "$distro" == "SUSE" ]; then
-    useradd -m %{solr_user}
-  else
-    adduser --system --shell /bin/bash --group --disabled-password --home /home/%{solr_user} %{solr_user}
-  fi
+id -u %{solr_user} &> /dev/null
+if [ "$?" -ne "0" ]; then
+  # useradd is low-level utility and works on most distros.
+  # -M Do no create the user's home directory, even if the system wide setting from
+  #    /etc/login.defs (CREATE_HOME) is set to yes.
+  # /usr/sbin/nologin exists on RedHat and Debian.
+  useradd --comment "System user to run solr daemon." --home-dir %{solr_install_dir} --system -M --shell /usr/sbin/nologin --user-group %{solr_user}
 fi
 
 %post

@@ -94,7 +94,7 @@ LOCAL_SHA1="${BASH_REMATCH[1]}"
 if [ $LOCAL_SHA1 == $SHA1 ]; then
   echo "SHA1 for SOURCES/solr-$SOLR_VERSION.tgz checks out: $SHA1"
 else
-  echo "ERROR! SOURCES/solr-$SOLR_VERSION.tgz has become corrupted or been tampered with.  Delete it and re-run this script."
+  echo "ERROR! SOURCES/solr-$SOLR_VERSION.tgz checksum did not match. Please delete the file and rerun the script."
   exit $EX_DATAERR
 fi
 

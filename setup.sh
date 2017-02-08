@@ -50,7 +50,7 @@ if [ "$system_repo_count" -ne "$needed_repo_count" ]; then
   exit $EX_CONFIG
 fi
 
-PACKAGES_NEEDED=('wget' 'openssl' 'rpm-build' 'mock' '')
+PACKAGES_NEEDED=('wget' 'openssl' 'rpm-build' 'mock')
 PACKAGES_TO_INSTALL=()
 
 for pkg in ${PACKAGES_NEEDED[@]}; do
