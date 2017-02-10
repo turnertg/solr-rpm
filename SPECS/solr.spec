@@ -34,12 +34,12 @@ Name:           solr
 Version:        %{solr_version}
 Release:        %{rpm_release}
 Summary:        Solr is the popular, blazing-fast, open source enterprise search platform built on Apache Lucene™
-Source:         solr-%{solr_version}.tgz
+# We download and verify the binary archive in build.sh
+Source0:        %{name}-%{solr_version}.tgz
 URL:            http://lucene.apache.org/solr/
 Group:          System Environment/Daemons
 License:        Apache License, Version 2.0
-BuildRoot:      %{_tmppath}/build-%{name}-%{version}
-Requires:       java-1.8.0-openjdk-headless >= 1.8.0, systemd
+Requires:       java-1.8.0-openjdk-headless >= 1.8.0, systemd, lsof, gawk
 BuildArch:      noarch
 Vendor:         Apache Software Foundation
 
@@ -52,7 +52,7 @@ servlet container such as Jetty.
 This package provides binaries from the official website in RPM form.
 
 %prep
-%setup -q -c
+%setup
 
 %build
 
@@ -145,5 +145,7 @@ exit 0
 %config %attr(0744,root,root) /etc/init.d/%{solr_service}
 
 %changelog
+* Solr changes (v4.0.0 & above): http://archive.apache.org/dist/lucene/%{name}/%{solr_version}/changes/Changes.html
+
 * Wed Aug 26 2015 jks@sagevoice.com
 - Inital version

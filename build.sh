@@ -51,16 +51,9 @@ else
   exit $EX_USAGE
 fi
 
-if [[ "$RPM_RELEASE" =~ ^[0-9]+$ ]]; then
-  echo "Building rpm version: $RPM_RELEASE"
-else
-  echo "Invalid release version format.  Must be a single number"
-  exit $EX_USAGE
-fi
-
 # clean the working directories. Do not remove SOURCES dir if it is already there.
-rm -rf BUILD RPMS SRPMS tmp || true
-mkdir -p BUILD RPMS SRPMS SOURCES tmp
+rm -rf BUILD RPMS SRPMS BUILDROOT || true
+mkdir -p BUILD RPMS SRPMS SOURCES BUILDROOT
 
 if [ ! -f SOURCES/solr-$SOLR_VERSION.tgz ]; then
   mirrors='tmp/mirrors.html'
@@ -94,11 +87,12 @@ LOCAL_SHA1="${BASH_REMATCH[1]}"
 if [ $LOCAL_SHA1 == $SHA1 ]; then
   echo "SHA1 for SOURCES/solr-$SOLR_VERSION.tgz checks out: $SHA1"
 else
-  echo "ERROR! SOURCES/solr-$SOLR_VERSION.tgz checksum did not match. Please delete the file and rerun the script."
+  rm -f SOURCES/solr*
+  echo "ERROR! SOURCES/solr-$SOLR_VERSION.tgz checksum did not match. The file has been deleted. Please rerun the script."
   exit $EX_DATAERR
 fi
 
 # Now that the sources are downloaded and verified we can actually make the RPM.
 # _topdir and _tmppath are magic rpm variables that can be defined in ~/.rpmmacros
 # For ease of reliable builds they are defined here on the command line.
-rpmbuild -ba --define="_topdir $PWD" --define="_tmppath $PWD/tmp" --define="solr_version $SOLR_VERSION" --define="rpm_release $RPM_RELEASE" SPECS/solr.spec
+rpmbuild -ba --define="buildroot $PWD/BUILDROOT" --define="solr_version $SOLR_VERSION" --define="rpm_release $RPM_RELEASE" SPECS/solr.spec
