@@ -62,12 +62,15 @@ This package provides binaries from the official website in RPM form.
 rm -rf "%{buildroot}"
 
 # install the main solr package in solr_install_dir
-%__install -d "%{buildroot}%{solr_install_dir}"
-cp -Rp solr-%{solr_version}/* "%{buildroot}%{solr_install_dir}"
+%__install -d "%{buildroot}%{solr_install_dir}/server"
+%__install -d "%{buildroot}%{solr_install_dir}/bin"
+cp -Rp solr-%{solr_version}/server/* "%{buildroot}%{solr_install_dir}/server"
+cp -Rp solr-%{solr_version}/bin/* "%{buildroot}%{solr_install_dir}/bin"
+rm -rf "%{buildroot}%{solr_install_dir}/bin/init.d" || true
 
 # install the var dir for solr
 %__install -d "%{buildroot}%{solr_var_dir}/data"
-%__install -d "%{buildroot}%{solr_var_dir}/logs"
+%__install -d "/var/log/solr"
 cp solr-%{solr_version}/server/solr/solr.xml "%{buildroot}%{solr_var_dir}/data/"
 cp solr-%{solr_version}/bin/solr.in.sh "%{buildroot}%{solr_var_dir}/"
 cp solr-%{solr_version}/server/resources/log4j.properties "%{buildroot}%{solr_var_dir}/"
