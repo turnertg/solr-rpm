@@ -22,20 +22,24 @@
 %define solr_install_dir /usr/local/solr
 # path where solr will log.
 %define solr_log_dir /var/log/solr
-# path where solr will store its data. Rationale: http://www.pathname.com/fhs/pub/fhs-2.3.html#SRVDATAFORSERVICESPROVIDEDBYSYSTEM
+# Rationale: http://www.pathname.com/fhs/pub/fhs-2.3.html#SRVDATAFORSERVICESPROVIDEDBYSYSTEM
 %define solr_data_dir /srv/solr
 # path where solr configurations will be stored
 %define solr_config_dir /etc/solr
 # binary files that allow us to control solr
 %define solr_bin_dir /usr/local/bin/solr
+# path where runtime files (like PID file) will be located
+%define solr_run_dir /run/solr
+# directory for holding file that contains environment variables
+%define solr_env_dir /etc/default
+# directory that will hold SystemD service definition for solr
+%define solr_service_dir /lib/systemd/system
 # matches SOLR_USER in the install_solr_service.sh file
 %define solr_user solr
 # matches SOLR_PORT in the install_solr_service.sh file
 %define solr_port 8983
 # matches SOLR_SERVICE in the install_solr_service.sh file
 %define solr_service solr
-# directories controlled by this installation
-%define solr_dirs ('/var/log/solr' '/var/run/solr')
 
 
 Name:           solr-server
@@ -57,29 +61,39 @@ library, with XML/HTTP and JSON APIs, hit highlighting, faceted search,
 caching, replication, and a web administration interface. It runs in a Java 
 servlet container such as Jetty.
 
-This package provides binaries from the official website in RPM form.
+This package provides binaries for running the server distribution
+from the official website in RPM form. It includes embedded Jetty.
 
 %prep
-%setup
+# Copy SystemD service definition to SOURCES
+cp %{_topdir}/extra/solr.service %{_sourcedir}/
+
+%setup -q
 
 %build
 
 %install
 rm -rf "%{buildroot}"
 
-# install the main solr package in solr_install_dir
-%__install -d "%{buildroot}%{solr_install_dir}/server"
-%__install -d "%{buildroot}%{solr_install_dir}/bin"
-cp -Rp solr-%{solr_version}/server/* "%{buildroot}%{solr_install_dir}/server"
-cp -Rp solr-%{solr_version}/bin/* "%{buildroot}%{solr_install_dir}/bin"
-rm -rf "%{buildroot}%{solr_install_dir}/bin/init.d" || true
+# make all directories.
+for dir in %{solr_install_dir} %{solr_log_dir} %{solr_run_dir} %{solr_data_dir} %{solr_config_dir} %{solr_bin_dir} %{solr_env_dir} %{solr_service_dir}
+do
+  %__install -d "%{buildroot}$dir
+done
 
-# install the var dir for solr
-%__install -d "%{buildroot}%{solr_var_dir}/data"
-%__install -d "/var/log/solr"
-cp solr-%{solr_version}/server/solr/solr.xml "%{buildroot}%{solr_var_dir}/data/"
-cp solr-%{solr_version}/bin/solr.in.sh "%{buildroot}%{solr_var_dir}/"
-cp solr-%{solr_version}/server/resources/log4j.properties "%{buildroot}%{solr_var_dir}/"
+# install the main solr package in solr_install_dir
+cp -Rp solr-%{solr_version}/server/* "%{buildroot}%{solr_install_dir}/server/"
+
+# Bin files/scripts.
+# Do not copy Windows specific things and files that will not be living in bin folder.
+for file in oom_solr.sh post solr; do
+  cp -Rp solr-%{solr_version}/bin/$file "%{buildroot}%{solr_bin_dir}/$file"
+done
+
+# copy config
+cp solr-%{solr_version}/server/solr/solr.xml "%{buildroot}%{solr_config_dir}/"
+cp solr-%{solr_version}/bin/solr.in.sh "%{buildroot}%{solr_env_dir}/"
+cp solr-%{solr_version}/server/resources/log4j.properties "%{buildroot}%{solr_config_dir}/"
 sed_expr="s#solr.log=.*#solr.log=\${solr.solr.home}/../logs#"
 sed -i.tmp -e "$sed_expr" "%{buildroot}%{solr_var_dir}/log4j.properties"
 rm -f "%{buildroot}%{solr_var_dir}/log4j.properties.tmp"
@@ -90,14 +104,10 @@ SOLR_LOGS_DIR=%{solr_var_dir}/logs
 SOLR_PORT=%{solr_port}
 " >> %{buildroot}%{solr_var_dir}/solr.in.sh
 
-# install the daemon
-%__install -d "%{buildroot}/etc/init.d"
-%__install -m0744 solr-%{solr_version}/bin/init.d/solr "%{buildroot}/etc/init.d/%{solr_service}"
+# install the systemd unit definition to /lib/systemd/system (works both on Debian and CentOS)
+%__install -m0744 solr.service "%{buildroot}%{solr_service_dir}/"
+
 # do some basic variable substitution on the init.d script
-sed_expr1="s#SOLR_INSTALL_DIR=.*#SOLR_INSTALL_DIR=%{solr_install_dir}#"
-sed_expr2="s#SOLR_ENV=.*#SOLR_ENV=%{solr_var_dir}/solr.in.sh#"
-sed_expr3="s#RUNAS=.*#RUNAS=%{solr_user}#"
-sed_expr4="s#Provides:.*#Provides: %{solr_service}#"
 sed -i.tmp -e "$sed_expr1" -e "$sed_expr2" -e "$sed_expr3" -e "$sed_expr4" %{buildroot}/etc/init.d/%{solr_service}
 rm -f %{buildroot}/etc/init.d/%{solr_service}.tmp
 
