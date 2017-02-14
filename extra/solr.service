@@ -1,0 +1,33 @@
+# SystemD specification to control Apache Solr
+
+[Unit]
+Documentation=https://wiki.apache.org/solr/FrontPage
+Description=Apache Solr Service
+Requires=network-online.target
+After=network-online.target
+Conflicts=shutdown.target
+PassEnvironment=PATH
+
+[Service]
+EnvironmentFile=/etc/default/solr.in.sh
+Type=forking
+TimeoutSec=5min
+IgnoreSIGPIPE=no
+KillMode=process
+GuessMainPID=no
+# PID file needs to be in SOLR_PID_DIR in /etc/default/solr.in.sh,
+# or script will write in that dir while systemd will keep waiting
+# on this path and never complete startup.
+PIDFile=/var/run/solr/solr-8983.pid
+RemainAfterExit=yes
+ExecStart=/opt/solr/bin/solr start
+ExecStop=/opt/solr/bin/solr stop
+OOMScoreAdjust=-10
+Restart=on-failure
+RestartForceExitStatus=SIGTERM SIGKILL
+WorkingDirectory=/opt/solr
+User=solr
+
+[Install]
+WantedBy=multi-user.target
+Alias=solrd.service
