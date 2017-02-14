@@ -88,11 +88,12 @@ if [ $LOCAL_SHA1 == $SHA1 ]; then
   echo "SHA1 for SOURCES/solr-$SOLR_VERSION.tgz checks out: $SHA1"
 else
   rm -f SOURCES/solr*
-  echo "ERROR! SOURCES/solr-$SOLR_VERSION.tgz checksum did not match. The file has been deleted. Please rerun the script."
+  echo "ERROR! SOURCES/solr-$SOLR_VERSION.tgz download was not successful (checksum did not match)."
+  echo "       The file has been deleted. Please rerun the script."
   exit $EX_DATAERR
 fi
 
 # Now that the sources are downloaded and verified we can actually make the RPM.
 # _topdir and _tmppath are magic rpm variables that can be defined in ~/.rpmmacros
 # For ease of reliable builds they are defined here on the command line.
-rpmbuild -ba --define="buildroot $PWD/BUILDROOT" --define="solr_version $SOLR_VERSION" --define="rpm_release $RPM_RELEASE" SPECS/solr.spec
+rpmbuild -ba --define="_topdir $PWD" --define="buildroot $PWD/BUILDROOT" --define="solr_version $SOLR_VERSION" --define="rpm_release $RPM_RELEASE" SPECS/solr.spec
