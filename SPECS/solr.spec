@@ -28,6 +28,8 @@
 %define solr_port 8983
 # matches SOLR_SERVICE in the install_solr_service.sh file
 %define solr_service solr
+# directories controlled by this installation
+%define solr_dirs ('/var/log/solr' '/var/run/solr')
 
 
 Name:           solr
@@ -39,7 +41,7 @@ Source0:        %{name}-%{solr_version}.tgz
 URL:            http://lucene.apache.org/solr/
 Group:          System Environment/Daemons
 License:        Apache License, Version 2.0
-Requires:       java-1.8.0-openjdk-headless >= 1.8.0, systemd, lsof, gawk
+Requires:       java-1.8.0-openjdk-headless >= 1.8.0, systemd, lsof, gawk, coreutils
 BuildArch:      noarch
 Vendor:         Apache Software Foundation
 
@@ -99,6 +101,13 @@ if [ "$?" -ne "0" ]; then
   # /usr/sbin/nologin exists on RedHat and Debian.
   useradd --comment "System user to run solr daemon." --home-dir %{solr_install_dir} --system -M --shell /usr/sbin/nologin --user-group %{solr_user}
 fi
+# Ensure directories needed exist.
+dirs=%{solr_dirs}
+for dir in ${dirs[@]}; do
+  echo "Creating ${dir}..."
+  mkdir -p $dir
+  chown %{solr_user}:%{solr_user} ${dir}
+done
 
 %post
 source distro.sh
@@ -128,7 +137,13 @@ elif [ "$1" == 0 ]; then
     else
       update-rc.d %{solr_service} remove
     fi
+    dirs=%{solr_dirs}
+    for dir in ${dirs[@]}; do
+      echo "Deleting ${dir}..."
+      rom -rf $dir
+    done
 fi
+
 exit 0
 
 %clean
