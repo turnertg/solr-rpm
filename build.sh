@@ -51,44 +51,50 @@ else
   exit $EX_USAGE
 fi
 
+current_dir=$(dirname ${0})
+rpmbuild_path=$(realpath $current_dir/rpmbuild)
+sources_path="$rpmbuild_path/SOURCES"
 # clean the working directories. Do not remove SOURCES dir if it is already there.
-rm -rf BUILD RPMS SRPMS BUILDROOT || true
-mkdir -p BUILD RPMS SRPMS SOURCES BUILDROOT
+for dir in BUILD RPMS SRPMS BUILDROOT; do
+  rm -rf $rpmbuild_path/$dir || true
+  mkdir -p $rpmbuild_path/$dir
+done
+mkdir -p $sources_path
 
 if [ ! -f SOURCES/solr-$SOLR_VERSION.tgz ]; then
-  mirrors='tmp/mirrors.html'
+  mirrors='/tmp/mirrors.html'
   # download the list of mirror sites
   wget -O $mirrors http://www.apache.org/dyn/closer.cgi/lucene/solr/$SOLR_VERSION
   # grab the fist link that contains the version we are looking for
   download_link=$(grep -om 1 -E "<a href=\"http.+$SOLR_VERSION\">" $mirrors | grep -oE "http.+$SOLR_VERSION")
   # actually download the archive from the mirror
-  wget -O SOURCES/solr-$SOLR_VERSION.tgz $download_link/solr-$SOLR_VERSION.tgz
+  wget -O $sources_path/solr-$SOLR_VERSION.tgz $download_link/solr-$SOLR_VERSION.tgz
   # remove the tmp file.
   rm $mirrors
 fi
 
 # get the SHA1 from Apache directly
-if [ ! -f SOURCES/solr-$SOLR_VERSION.tgz.sha1 ]; then
-  wget -O SOURCES/solr-$SOLR_VERSION.tgz.sha1 http://archive.apache.org/dist/lucene/solr/$SOLR_VERSION/solr-$SOLR_VERSION.tgz.sha1
+if [ ! -f $sources_path/solr-$SOLR_VERSION.tgz.sha1 ]; then
+  wget -O $sources_path/solr-$SOLR_VERSION.tgz.sha1 http://archive.apache.org/dist/lucene/solr/$SOLR_VERSION/solr-$SOLR_VERSION.tgz.sha1
 fi
 
 # verify the integrity of the archive
 # the sha1 file has the file name at the end, so use a regex to just pull the sha1 part out of the file
-SHA1=$(<SOURCES/solr-$SOLR_VERSION.tgz.sha1)
+SHA1=$(<$sources_path/solr-$SOLR_VERSION.tgz.sha1)
 [[ $SHA1 =~ ^([0-9a-f]+) ]]
 SHA1="${BASH_REMATCH[1]}"
 
 # use openssl to generate the sha1 for the local archive
-LOCAL_SHA1=$(openssl sha1 SOURCES/solr-$SOLR_VERSION.tgz)
+LOCAL_SHA1=$(openssl sha1 $sources_path/solr-$SOLR_VERSION.tgz)
 # openssl puts the file name at the beginning, so use another regex to pull just the sha1
 [[ $LOCAL_SHA1 =~ ([0-9a-f]+)$ ]]
 LOCAL_SHA1="${BASH_REMATCH[1]}"
 
 if [ $LOCAL_SHA1 == $SHA1 ]; then
-  echo "SHA1 for SOURCES/solr-$SOLR_VERSION.tgz checks out: $SHA1"
+  echo "SHA1 for $sources_path/solr-$SOLR_VERSION.tgz checks out: $SHA1"
 else
   rm -f SOURCES/solr*
-  echo "ERROR! SOURCES/solr-$SOLR_VERSION.tgz download was not successful (checksum did not match)."
+  echo "ERROR! $sources_path/solr-$SOLR_VERSION.tgz download was not successful (checksum did not match)."
   echo "       The file has been deleted. Please rerun the script."
   exit $EX_DATAERR
 fi
@@ -96,4 +102,4 @@ fi
 # Now that the sources are downloaded and verified we can actually make the RPM.
 # _topdir and _tmppath are magic rpm variables that can be defined in ~/.rpmmacros
 # For ease of reliable builds they are defined here on the command line.
-rpmbuild -ba --define="_topdir $PWD" --define="buildroot $PWD/BUILDROOT" --define="solr_version $SOLR_VERSION" --define="rpm_release $RPM_RELEASE" SPECS/solr.spec
+rpmbuild -ba --define="_topdir $rpmbuild_path" --define="buildroot $rpmbuild_path/BUILDROOT" --define="solr_version $SOLR_VERSION" --define="rpm_release $RPM_RELEASE" $rpmbuild_path/SPECS/solr.spec
