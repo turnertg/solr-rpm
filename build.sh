@@ -61,8 +61,8 @@ for dir in BUILD RPMS SRPMS BUILDROOT; do
 done
 mkdir -p $sources_path
 
-if [ ! -f SOURCES/solr-$SOLR_VERSION.tgz ]; then
-  mirrors='/tmp/mirrors.html'
+if [ ! -f "$sources_path/solr-$SOLR_VERSION.tgz" ]; then
+  mirrors='/tmp/solr_mirrors.html'
   # download the list of mirror sites
   wget -O $mirrors http://www.apache.org/dyn/closer.cgi/lucene/solr/$SOLR_VERSION
   # grab the fist link that contains the version we are looking for
@@ -93,7 +93,7 @@ LOCAL_SHA1="${BASH_REMATCH[1]}"
 if [ $LOCAL_SHA1 == $SHA1 ]; then
   echo "SHA1 for $sources_path/solr-$SOLR_VERSION.tgz checks out: $SHA1"
 else
-  rm -f SOURCES/solr*
+  rm -f $sources_path/solr*
   echo "ERROR! $sources_path/solr-$SOLR_VERSION.tgz download was not successful (checksum did not match)."
   echo "       The file has been deleted. Please rerun the script."
   exit $EX_DATAERR
