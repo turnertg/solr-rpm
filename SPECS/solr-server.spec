@@ -18,10 +18,16 @@
 # and it is not needed since there are no platform dependent jars in the archive
 %define __jar_repack %{nil}
 
-# matches SOLR_VAR_DIR in the install_solr_service.sh file
-%define solr_var_dir /var/solr
-# matches SOLR_INSTALL_DIR in the solr file in /etc/init.d/
-%define solr_install_dir /opt/solr
+# Rationale: http://www.pathname.com/fhs/pub/fhs-2.3.html#THEUSRHIERARCHY
+%define solr_install_dir /usr/local/solr
+# path where solr will log.
+%define solr_log_dir /var/log/solr
+# path where solr will store its data. Rationale: http://www.pathname.com/fhs/pub/fhs-2.3.html#SRVDATAFORSERVICESPROVIDEDBYSYSTEM
+%define solr_data_dir /srv/solr
+# path where solr configurations will be stored
+%define solr_config_dir /etc/solr
+# binary files that allow us to control solr
+%define solr_bin_dir /usr/local/bin/solr
 # matches SOLR_USER in the install_solr_service.sh file
 %define solr_user solr
 # matches SOLR_PORT in the install_solr_service.sh file
