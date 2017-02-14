@@ -12,6 +12,10 @@ Once that is done you can build an RPM by running
 The version '5.3.0' can be replaced with any released version of Solr in the
 x.x.x series.  The '1' is the version of the RPM itself.
 
+## Notes for modifications
+1. Constants defined at the top of spec file should tell you where most of the things go.
+2. SystemD service definition uses these path. As this file is not included in distibution, there is no patch for it and just uses these paths.
+
 Copyright © 2015 Jason Stafford
 
 Licensed under the Apache License, Version 2.0 (the "License");
