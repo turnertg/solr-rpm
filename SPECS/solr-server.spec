@@ -14,6 +14,10 @@
 # Some documentation to help reduce time to search
 # https://fedoraproject.org/wiki/How_to_create_an_RPM_package#SPEC_file_overview
 
+# RPM Build reference:
+# http://www.tldp.org/HOWTO/RPM-HOWTO/build.html
+# http://rpm-guide.readthedocs.io/en/latest/rpm-guide.html#rpm-packages
+
 # Disable repacking of jars, since it takes forever
 # and it is not needed since there are no platform dependent jars in the archive
 %define __jar_repack %{nil}
@@ -57,6 +61,7 @@ Group:          System Environment/Daemons
 License:        Apache License, Version 2.0
 Requires:       java-1.8.0-openjdk-headless >= 1.8.0, systemd, lsof, gawk, coreutils, shadow-utils
 BuildArch:      noarch
+BuildRequires:  tar, sed, coreutils
 Vendor:         Apache Software Foundation
 
 %description
@@ -69,23 +74,30 @@ This package provides binaries for running the server distribution
 from the official website in RPM form. It includes embedded Jetty.
 
 %prep
+%setup -b 0 -n solr-%{solr_version}
 # Copy SystemD service definition to SOURCES... 
-# dunno if it really required.. can be directly copied from _topdir to solr_service_dir.
-cp -p %{_topdir}/extra/%{solr_service} %{_sourcedir}/
+cp -p %{_topdir}/../extra/%{solr_service} %{_sourcedir}/
 
-# Build script should have already unzipped the sources and put them in proper place.
 # Do some substitutions in scripts and configs to reflect constants defined in this spec file.
 # Substitutions in place of patches will make maintenance easier.
-sed -i'' 's|#SOLR_PID_DIR=|SOLR_PID_DIR=%{solr_run_dir}|g' solr-%{solr_version}/bin/solr.in.sh
-sed -i'' 's|#SOLR_HOME=|SOLR_HOME=%{solr_data_dir}|g' solr-%{solr_version}/bin/solr.in.sh
-sed -i'' 's|#LOG4J_PROPS=|LOG4J_PROPS=%{solr_config_dir}/log4j.properties|g' solr-%{solr_version}/bin/solr.in.sh
-sed -i'' 's|#SOLR_LOGS_DIR=|SOLR_LOGS_DIR=%{solr_log_dir}|g' solr-%{solr_version}/bin/solr.in.sh
+solr_env_file='%{_sourcedir}/solr-%{solr_version}/bin/solr.in.sh'
+sed -i'' 's|#SOLR_PID_DIR=|SOLR_PID_DIR=%{solr_run_dir}|g' $solr_env_file
+sed -i'' 's|#SOLR_HOME=|SOLR_HOME=%{solr_data_dir}|g' $solr_env_file
+sed -i'' 's|#LOG4J_PROPS=|LOG4J_PROPS=%{solr_config_dir}/log4j.properties|g' $solr_env_file
+sed -i'' 's|#SOLR_LOGS_DIR=|SOLR_LOGS_DIR=%{solr_log_dir}|g' $solr_env_file
 
 # Update paths in service definition
-sed -i'' 's|SOLR_ENV_DIR|%{solr_env_dir}|g' %{solr_service}
-sed -i'' 's|SOLR_RUN_DIR|%{solr_run_dir}|g' %{solr_service}
-sed -i'' 's|SOLR_INSTALL_DIR|%{solr_install_link}|g' %{solr_service}
-%setup -q
+systemd_unit_file="%{_sourcedir}/%{solr_service}"
+sed -i'' 's|SOLR_ENV_DIR|%{solr_env_dir}|g' $systemd_unit_file
+sed -i'' 's|SOLR_RUN_DIR|%{solr_run_dir}|g' $systemd_unit_file
+sed -i'' 's|SOLR_INSTALL_DIR|%{solr_install_link}|g' $systemd_unit_file
+
+# Because we are not packaging dist and 'post' script depends on it,
+# change the path of solr-core.*.jar to the one that is packaged here.
+# Source code analysis shows the util class used by 'post' script is
+# there in solr-core in server too.
+sed -i 's|$SOLR_TIP/dist|%{solr_install_link}/server/solr-webapp/webapp/WEB-INF/lib|g' bin/post
+ 
 
 %build
 
@@ -95,25 +107,30 @@ rm -rf "%{buildroot}"
 # make all directories.
 for dir in %{solr_install_dir} %{solr_log_dir} %{solr_run_dir} %{solr_data_dir} %{solr_config_dir} %{solr_bin_dir} %{solr_env_dir} %{solr_service_dir}
 do
-  %__install -d "%{buildroot}$dir
+  %__install -d "%{buildroot}$dir"
 done
 
+solr_root="%{_sourcedir}/solr-%{solr_version}"
 # install the main solr package in solr_install_dir
-cp -Rp solr-%{solr_version}/server/* "%{buildroot}%{solr_install_dir}/server/"
+cp -Rp "$solr_root/server/*" "%{buildroot}%{solr_install_dir}/server/"
 
 # Bin files/scripts.
 # Do not copy Windows specific things and files that will not be living in bin folder.
 for file in oom_solr.sh post solr; do
-  cp -Rp solr-%{solr_version}/bin/$file "%{buildroot}%{solr_bin_dir}/$file"
+  cp -Rp "$solr_root/bin/$file" "%{buildroot}%{solr_bin_dir}/$file"
 done
 
 # copy config
-cp -p solr-%{solr_version}/server/solr/solr.xml "%{buildroot}%{solr_data_dir}/"
-cp -p solr-%{solr_version}/bin/solr.in.sh "%{buildroot}%{solr_env_dir}/"
-cp -p solr-%{solr_version}/server/resources/log4j.properties "%{buildroot}%{solr_config_dir}/"
+cp -p $solr_root/server/solr/solr.xml "%{buildroot}%{solr_data_dir}/"
+cp -p $solr_root/bin/solr.in.sh "%{buildroot}%{solr_env_dir}/"
+cp -p $solr_root/server/resources/log4j.properties "%{buildroot}%{solr_config_dir}/"
 
 # install the systemd unit definition to /lib/systemd/system (works both on Debian and CentOS)
 %__install -m0744 %{solr_service} "%{buildroot}%{solr_service_dir}/"
+
+# copy licenses and other text files.
+cp -Rp $solr_root/licenses %{buildroot}%{solr_install_dir}/
+cp -p  $solr_root/*.txt %{buildroot}%{solr_install_dir}/
 
 %pre
 id -u %{solr_user} &> /dev/null
@@ -190,7 +207,10 @@ exit 0
 %config %attr(0744,root,root) /etc/init.d/%{solr_service}
 
 %changelog
-* Solr changes (v4.0.0 & above): http://archive.apache.org/dist/lucene/%{name}/%{solr_version}/changes/Changes.html
+
+* Wed Feb 15 2017 talk@devghai.com
+- Packaging for CentOS
+- Solr changes (v4.0.0 & above): http://archive.apache.org/dist/lucene/solr/%{solr_version}/changes/Changes.html
 
 * Wed Aug 26 2015 jks@sagevoice.com
 - Inital version
