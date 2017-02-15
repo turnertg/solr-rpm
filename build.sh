@@ -102,4 +102,4 @@ fi
 # Now that the sources are downloaded and verified we can actually make the RPM.
 # _topdir and _tmppath are magic rpm variables that can be defined in ~/.rpmmacros
 # For ease of reliable builds they are defined here on the command line.
-rpmbuild -ba --define="_topdir $rpmbuild_path" --define="buildroot $rpmbuild_path/BUILDROOT" --define="solr_version $SOLR_VERSION" --define="rpm_release $RPM_RELEASE" $rpmbuild_path/SPECS/solr.spec
+rpmbuild -ba --define="_topdir $rpmbuild_path" --define="buildroot $rpmbuild_path/BUILDROOT" --define="solr_version $SOLR_VERSION" --define="rpm_release $RPM_RELEASE" $rpmbuild_path/SPECS/solr-server.spec
