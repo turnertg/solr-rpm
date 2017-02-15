@@ -60,6 +60,8 @@ for dir in BUILD RPMS SRPMS BUILDROOT; do
   mkdir -p $rpmbuild_path/$dir
 done
 mkdir -p $sources_path
+# Move spec dir to build dir
+cp -R $current_dir/SPECS $rpmbuild_path/
 
 if [ ! -f "$sources_path/solr-$SOLR_VERSION.tgz" ]; then
   mirrors='/tmp/solr_mirrors.html'
