@@ -76,18 +76,18 @@ from the official website in RPM form. It includes embedded Jetty.
 %prep
 %setup -b 0 -n solr-%{solr_version}
 # Copy SystemD service definition to SOURCES... 
-cp -p %{_topdir}/../extra/%{solr_service} %{_sourcedir}/
+cp -p %{_topdir}/../extra/%{solr_service} %{_builddir}/
 
 # Do some substitutions in scripts and configs to reflect constants defined in this spec file.
 # Substitutions in place of patches will make maintenance easier.
-solr_env_file='%{_sourcedir}/solr-%{solr_version}/bin/solr.in.sh'
+solr_env_file='%{_builddir}/solr-%{solr_version}/bin/solr.in.sh'
 sed -i'' 's|#SOLR_PID_DIR=|SOLR_PID_DIR=%{solr_run_dir}|g' $solr_env_file
 sed -i'' 's|#SOLR_HOME=|SOLR_HOME=%{solr_data_dir}|g' $solr_env_file
 sed -i'' 's|#LOG4J_PROPS=|LOG4J_PROPS=%{solr_config_dir}/log4j.properties|g' $solr_env_file
 sed -i'' 's|#SOLR_LOGS_DIR=|SOLR_LOGS_DIR=%{solr_log_dir}|g' $solr_env_file
 
 # Update paths in service definition
-systemd_unit_file="%{_sourcedir}/%{solr_service}"
+systemd_unit_file="%{_builddir}/%{solr_service}"
 sed -i'' 's|SOLR_ENV_DIR|%{solr_env_dir}|g' $systemd_unit_file
 sed -i'' 's|SOLR_RUN_DIR|%{solr_run_dir}|g' $systemd_unit_file
 sed -i'' 's|SOLR_INSTALL_DIR|%{solr_install_link}|g' $systemd_unit_file
@@ -110,7 +110,7 @@ do
   %__install -d "%{buildroot}$dir"
 done
 
-solr_root="%{_sourcedir}/solr-%{solr_version}"
+solr_root="%{_builddir}/solr-%{solr_version}"
 # install the main solr package in solr_install_dir
 cp -Rp "$solr_root/server/*" "%{buildroot}%{solr_install_dir}/server/"
 
