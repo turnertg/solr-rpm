@@ -16,7 +16,7 @@ TimeoutSec=5min
 IgnoreSIGPIPE=no
 KillMode=process
 GuessMainPID=no
-# PID file needs to be in SOLR_PID_DIR defined in /etc/default/solr.in.sh,
+# PID file needs to be in SOLR_PID_DIR defined in SOLR_RUN_DIR/solr.in.sh,
 # or script will write in that dir while systemd will keep waiting
 # on this path and never complete startup.
 PIDFile=SOLR_RUN_DIR/solr-8983.pid
