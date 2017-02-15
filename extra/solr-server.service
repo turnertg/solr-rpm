@@ -9,8 +9,8 @@ Conflicts=shutdown.target
 PassEnvironment=PATH JAVA_HOME
 
 [Service]
-EnvironmentFile=/etc/default/solr.in.sh
-Environment="SOLR_INCLUDE=/etc/default/solr.in.sh"
+EnvironmentFile=SOLR_ENV_DIR/solr.in.sh
+Environment="SOLR_INCLUDE=SOLR_ENV_DIR/solr.in.sh"
 Type=forking
 TimeoutSec=5min
 IgnoreSIGPIPE=no
@@ -19,14 +19,14 @@ GuessMainPID=no
 # PID file needs to be in SOLR_PID_DIR defined in /etc/default/solr.in.sh,
 # or script will write in that dir while systemd will keep waiting
 # on this path and never complete startup.
-PIDFile=/var/run/solr/solr-8983.pid
+PIDFile=SOLR_RUN_DIR/solr-8983.pid
 RemainAfterExit=yes
-ExecStart=/usr/local/solr/bin/solr start
-ExecStop=/usr/local/solr/bin/solr stop
+ExecStart=SOLR_INSTALL_DIR/bin/solr start
+ExecStop=SOLR_INSTALL_DIR/bin/solr stop
 OOMScoreAdjust=-10
 Restart=on-failure
 RestartForceExitStatus=SIGTERM SIGKILL
-WorkingDirectory=/usr/local/solr
+WorkingDirectory=SOLR_INSTALL_DIR
 User=solr
 
 [Install]
