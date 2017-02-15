@@ -19,7 +19,9 @@
 %define __jar_repack %{nil}
 
 # Rationale: http://www.pathname.com/fhs/pub/fhs-2.3.html#THEUSRHIERARCHY
-%define solr_install_dir /usr/local/solr
+%define solr_install_dir /usr/local/solr-%{solr_version}
+# Solr installation symlink. Use this in scripts and paths.
+%define solr_install_link /usr/local/solr
 # path where solr will log.
 %define solr_log_dir /var/log/solr
 # Rationale: http://www.pathname.com/fhs/pub/fhs-2.3.html#SRVDATAFORSERVICESPROVIDEDBYSYSTEM
@@ -38,8 +40,10 @@
 %define solr_user solr
 # matches SOLR_PORT in the install_solr_service.sh file
 %define solr_port 8983
-# matches SOLR_SERVICE in the install_solr_service.sh file
-%define solr_service solr
+# name of the SystemD unit file
+%define solr_service solr-server.service
+# string to append when backing up to upgrade
+%define solr_backup_str upgrading_to_%{solr_version}
 
 
 Name:           solr-server
@@ -51,7 +55,7 @@ Source0:        %{name}-%{solr_version}.tgz
 URL:            http://lucene.apache.org/solr/
 Group:          System Environment/Daemons
 License:        Apache License, Version 2.0
-Requires:       java-1.8.0-openjdk-headless >= 1.8.0, systemd, lsof, gawk, coreutils
+Requires:       java-1.8.0-openjdk-headless >= 1.8.0, systemd, lsof, gawk, coreutils, shadow-utils
 BuildArch:      noarch
 Vendor:         Apache Software Foundation
 
@@ -65,9 +69,22 @@ This package provides binaries for running the server distribution
 from the official website in RPM form. It includes embedded Jetty.
 
 %prep
-# Copy SystemD service definition to SOURCES
-cp %{_topdir}/extra/solr.service %{_sourcedir}/
+# Copy SystemD service definition to SOURCES... 
+# dunno if it really required.. can be directly copied from _topdir to solr_service_dir.
+cp -p %{_topdir}/extra/%{solr_service} %{_sourcedir}/
 
+# Build script should have already unzipped the sources and put them in proper place.
+# Do some substitutions in scripts and configs to reflect constants defined in this spec file.
+# Substitutions in place of patches will make maintenance easier.
+sed -i'' 's|#SOLR_PID_DIR=|SOLR_PID_DIR=%{solr_run_dir}|g' solr-%{solr_version}/bin/solr.in.sh
+sed -i'' 's|#SOLR_HOME=|SOLR_HOME=%{solr_data_dir}|g' solr-%{solr_version}/bin/solr.in.sh
+sed -i'' 's|#LOG4J_PROPS=|LOG4J_PROPS=%{solr_config_dir}/log4j.properties|g' solr-%{solr_version}/bin/solr.in.sh
+sed -i'' 's|#SOLR_LOGS_DIR=|SOLR_LOGS_DIR=%{solr_log_dir}|g' solr-%{solr_version}/bin/solr.in.sh
+
+# Update paths in service definition
+sed -i'' 's|SOLR_ENV_DIR|%{solr_env_dir}|g' %{solr_service}
+sed -i'' 's|SOLR_RUN_DIR|%{solr_run_dir}|g' %{solr_service}
+sed -i'' 's|SOLR_INSTALL_DIR|%{solr_install_link}|g' %{solr_service}
 %setup -q
 
 %build
@@ -91,25 +108,12 @@ for file in oom_solr.sh post solr; do
 done
 
 # copy config
-cp solr-%{solr_version}/server/solr/solr.xml "%{buildroot}%{solr_config_dir}/"
-cp solr-%{solr_version}/bin/solr.in.sh "%{buildroot}%{solr_env_dir}/"
-cp solr-%{solr_version}/server/resources/log4j.properties "%{buildroot}%{solr_config_dir}/"
-sed_expr="s#solr.log=.*#solr.log=\${solr.solr.home}/../logs#"
-sed -i.tmp -e "$sed_expr" "%{buildroot}%{solr_var_dir}/log4j.properties"
-rm -f "%{buildroot}%{solr_var_dir}/log4j.properties.tmp"
-echo "SOLR_PID_DIR=%{solr_var_dir}
-SOLR_HOME=%{solr_var_dir}/data
-LOG4J_PROPS=%{solr_var_dir}/log4j.properties
-SOLR_LOGS_DIR=%{solr_var_dir}/logs
-SOLR_PORT=%{solr_port}
-" >> %{buildroot}%{solr_var_dir}/solr.in.sh
+cp -p solr-%{solr_version}/server/solr/solr.xml "%{buildroot}%{solr_data_dir}/"
+cp -p solr-%{solr_version}/bin/solr.in.sh "%{buildroot}%{solr_env_dir}/"
+cp -p solr-%{solr_version}/server/resources/log4j.properties "%{buildroot}%{solr_config_dir}/"
 
 # install the systemd unit definition to /lib/systemd/system (works both on Debian and CentOS)
-%__install -m0744 solr.service "%{buildroot}%{solr_service_dir}/"
-
-# do some basic variable substitution on the init.d script
-sed -i.tmp -e "$sed_expr1" -e "$sed_expr2" -e "$sed_expr3" -e "$sed_expr4" %{buildroot}/etc/init.d/%{solr_service}
-rm -f %{buildroot}/etc/init.d/%{solr_service}.tmp
+%__install -m0744 %{solr_service} "%{buildroot}%{solr_service_dir}/"
 
 %pre
 id -u %{solr_user} &> /dev/null
@@ -120,49 +124,56 @@ if [ "$?" -ne "0" ]; then
   # /usr/sbin/nologin exists on RedHat and Debian.
   useradd --comment "System user to run solr daemon." --home-dir %{solr_install_dir} --system -M --shell /usr/sbin/nologin --user-group %{solr_user}
 fi
-# Ensure directories needed exist.
-dirs=%{solr_dirs}
-for dir in ${dirs[@]}; do
-  echo "Creating ${dir}..."
-  mkdir -p $dir
-  chown %{solr_user}:%{solr_user} ${dir}
-done
 
 %post
-source distro.sh
-if [[ "$distro" == "RedHat" || "$distro" == "SUSE" ]]; then
-  chkconfig %{solr_service} on
-else
-  update-rc.d %{solr_service} defaults
-fi
-service %{solr_service} start
-sleep 5
+# Make a symlink to installed version so that upgrades are easier
+ln -sT %{solr_install_dir} %{solr_install_link}
+
+# just enable the service, don't start it.
+# If the package is used in enterprise environment, changes will likely need to be made before starting the service.
+# (Debian and CentOS have systemctl in different locations.)
+systemctl daemon-reload
+systemctl enable %{solr_service}
 
 %preun
-if [ "$1" == 0 ]; then
-    # if this is uninstallation as opposed to upgrade, delete the service
-    service %{solr_service} stop > /dev/null 2>&1
+# Stop the service regardless of whether we are upgrading or uninstalling.
+# Issuing stop irrespective of whether service is running or not is harmless.
+echo "Stopping %{solr_service}."
+systemctl stop %{solr_service}
+
+# Backup previous settings if we are upgrading.
+if [ "$1" -gt 0 ]; then
+  # Backup setting in default dir
+  echo "Backing up %{solr_env_dir}/solr.in.sh"
+  [ -f %{solr_env_dir}/solr.in.sh ] && mv %{solr_env_dir}/solr.in.sh %{solr_env_dir}/solr.in.sh.%{solr_backup_str}
+  # Backup /etc/solr config
+  echo "Backing up %{solr_config_dir}"
+  [ -d %{solr_config_dir} ] && mv %{solr_config_dir} %{solr_config_dir}.%{solr_backup_str}
+  # Remove symlink to current installation if it exists.
+  [ -h "%{solr_install_link}"] && unlink %{solr_install_link}
+  # Backup SystemD config as this release might be updating something in that.
+  if [ -f "%{solr_service_dir}/%{solr_service}" ]; then
+    echo "Backing up %{solr_service_dir}/%{solr_service}"
+    mv %{solr_service_dir}/%{solr_service} %{solr_service_dir}/%{solr_service}.%{solr_backup_str}
+    systemctl daemon-reload
+  fi
 fi
 exit 0
 
 %postun
-source distro.sh
-if [ "$1" -ge 1 ]; then
-    service solr restart > /dev/null 2>&1
-elif [ "$1" == 0 ]; then
+if [ "$1" == 0 ]; then
     # if this is uninstallation as opposed to upgrade, delete the service
-    if [[ "$distro" == "RedHat" || "$distro" == "SUSE" ]]; then
-      chkconfig --del %{solr_service}
-    else
-      update-rc.d %{solr_service} remove
-    fi
-    dirs=%{solr_dirs}
-    for dir in ${dirs[@]}; do
-      echo "Deleting ${dir}..."
-      rom -rf $dir
+    systemctl disable %{solr_service}
+    for dir in %{solr_install_dir} %{solr_log_dir} %{solr_run_dir} %{solr_data_dir} %{solr_config_dir} %{solr_bin_dir} %{solr_env_dir}/solr.in.sh %{solr_service_dir}/%{solr_service}
+    do
+      echo "Removing $dir"
+      rm -rf $dir
     done
+    # delete the user
+    userdel --force --remove %{solr_user}
+    # Reload systemctl daemon
+    systemctl daemon-reload
 fi
-
 exit 0
 
 %clean
