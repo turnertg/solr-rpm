@@ -51,7 +51,7 @@ Version:        %{solr_version}
 Release:        %{rpm_release}
 Summary:        Solr is the popular, blazing-fast, open source enterprise search platform built on Apache Lucene™
 # We download and verify the binary archive in build.sh
-Source0:        %{name}-%{solr_version}.tgz
+Source0:        solr-%{solr_version}.tgz
 URL:            http://lucene.apache.org/solr/
 Group:          System Environment/Daemons
 License:        Apache License, Version 2.0
