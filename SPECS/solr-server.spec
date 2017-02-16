@@ -88,7 +88,8 @@ sed -i'' 's|^#LOG4J_PROPS.*$|LOG4J_PROPS=%{solr_config_dir}/log4j.properties|g' 
 sed -i'' 's|^#SOLR_LOGS_DIR.*$|SOLR_LOGS_DIR=%{solr_log_dir}|g' $solr_env_file
 sed -i'' 's|^#SOLR_PORT.*$|SOLR_PORT=%{solr_port}|g' $solr_env_file
 # Append DEFAULT_SERVER_DIR to solr_env_file so that embedded tools can work.
-# It is not there in env file supplied by the package.
+# It is not there in env file supplied by the package and is hard coded to be
+# used in function run_tool(). 
 echo -e '\n# Directory where the server code resides.' | tee -a $solr_env_file
 echo    'DEFAULT_SERVER_DIR=%{solr_install_link}/server' | tee -a $solr_env_file
 
