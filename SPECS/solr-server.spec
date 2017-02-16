@@ -33,7 +33,7 @@
 # path where solr configurations will be stored
 %define solr_config_dir /etc/solr
 # binary files that allow us to control solr
-%define solr_bin_dir /usr/local/bin/solr
+%define solr_bin_dir /usr/local/bin
 # path where runtime files (like PID file) will be located
 %define solr_run_dir /run/solr
 # directory for holding file that contains environment variables
@@ -205,8 +205,15 @@ exit 0
 %clean
 %__rm -rf "%{buildroot}"
 
-%files -f %{packaged_files}
-%defattr(-,%{solr_user},-)
+%files
+%defattr(0755,%{solr_user},%{solr_user})
+%dir %{solr_log_dir}
+%dir %{solr_run_dir}
+%{solr_data_dir}
+%{solr_install_dir}
+%{solr_config_dir}
+%attr(0644,%{solr_user},%{solr_user}) %{solr_service_dir}/%{solr_service}
+%attr(0644,%{solr_user},%{solr_user}) %{solr_env_dir}/solr.in.sh
 # No need to mention config files as we handle them in upgrades explicitly.
 
 %changelog
