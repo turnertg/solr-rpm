@@ -68,11 +68,23 @@ if [ ! -f "$sources_path/solr-$SOLR_VERSION.tgz" ]; then
   # download the list of mirror sites
   wget -O $mirrors http://www.apache.org/dyn/closer.cgi/lucene/solr/$SOLR_VERSION
   # grab the fist link that contains the version we are looking for
-  download_link=$(grep -om 1 -E "<a href=\"http.+$SOLR_VERSION\">" $mirrors | grep -oE "http.+$SOLR_VERSION")
-  # actually download the archive from the mirror
-  wget -O $sources_path/solr-$SOLR_VERSION.tgz $download_link/solr-$SOLR_VERSION.tgz
+  download_links=$(grep -oP "(http.+?$SOLR_VERSION)?" /tmp/solr_mirrors.html | uniq)
+  # actually download the archive from the mirror. 
+  # sometimes mirror is listed, but archive is not there. so try with all mirrors.
+  successfully_downloaded=1
+  for mirror in ${download_links[@]}; do
+      wget -O $sources_path/solr-$SOLR_VERSION.tgz $mirror/solr-$SOLR_VERSION.tgz
+      successfully_downloaded="$?"
+      [ "$successfully_downloaded" -eq 0 ] && break
+  done
   # remove the tmp file.
   rm $mirrors
+  
+  if [ "successfully_downloaded" -gt 0 ]; then
+    echo -e "\nCould not download solr from mirrors."
+    echo "You can download the file to $sources_path/solr-$SOLR_VERSION.tgz and rerun this script."
+    exit 1
+  fi
 fi
 
 # get the SHA1 from Apache directly
