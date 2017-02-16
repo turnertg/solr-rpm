@@ -128,7 +128,7 @@ cp -p $solr_root/bin/solr.in.sh "%{buildroot}%{solr_env_dir}/"
 cp -p $solr_root/server/resources/log4j.properties "%{buildroot}%{solr_config_dir}/"
 
 # install the systemd unit definition to /lib/systemd/system (works both on Debian and CentOS)
-%__install -m0744 $solr_root/%{solr_service} "%{buildroot}%{solr_service_dir}/"
+%__install -m0744 %{_builddir}/%{solr_service} "%{buildroot}%{solr_service_dir}/"
 
 # copy licenses and other text files.
 cp -Rp $solr_root/licenses %{buildroot}%{solr_install_dir}/
