@@ -90,6 +90,7 @@ sed -i'' 's|#SOLR_LOGS_DIR=|SOLR_LOGS_DIR=%{solr_log_dir}|g' $solr_env_file
 
 # Update paths in service definition
 systemd_unit_file="%{_builddir}/%{solr_service}"
+sed -i'' 's|RPM_PORT|%{solr_port}|g' $systemd_unit_file
 sed -i'' 's|RPM_ENV_DIR|%{solr_env_dir}|g' $systemd_unit_file
 sed -i'' 's|RPM_RUN_DIR|%{solr_run_dir}|g' $systemd_unit_file
 sed -i'' 's|RPM_BIN_DIR|%{solr_bin_dir}|g' $systemd_unit_file
