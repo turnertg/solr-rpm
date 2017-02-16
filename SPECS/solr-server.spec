@@ -145,7 +145,7 @@ if [ "$?" -ne "0" ]; then
   # -M Do no create the user's home directory, even if the system wide setting from
   #    /etc/login.defs (CREATE_HOME) is set to yes.
   # /usr/sbin/nologin exists on RedHat and Debian.
-  useradd --comment "System user to run solr daemon." --home-dir %{solr_install_dir} --system -M --shell /usr/sbin/nologin --user-group %{solr_user}
+  useradd --comment "System user to run solr daemon." --home-dir %{solr_install_link} --system -M --shell /usr/sbin/nologin --user-group %{solr_user}
 fi
 
 %post
