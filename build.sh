@@ -69,8 +69,8 @@ if [ ! -f "$sources_path/solr-$SOLR_VERSION.tgz" ]; then
   wget -O $mirrors http://www.apache.org/dyn/closer.cgi/lucene/solr/$SOLR_VERSION
   # append the archive site to end of file so that it is tried last if all mirrors fail
   echo "http://archive.apache.org/dist/lucene/solr/$SOLR_VERSION/" | tee -a $mirrors
-  # actually download the archive from the mirror. 
   # sometimes mirror is listed, but archive is not there. so try with all mirrors.
+  # some mirrors automatically redirect to latest version. using --max-redirect=0 to avoid that.
   successfully_downloaded=1
   for mirror in $(grep -oP "(http.+?$SOLR_VERSION)?" /tmp/solr_mirrors.html | uniq) ; do
       echo "Trying to download from $mirror..."
