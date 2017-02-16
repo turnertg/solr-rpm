@@ -150,7 +150,7 @@ fi
 
 %post
 # Make a symlink to installed version so that upgrades are easier
-[ -h "%{solr_install_link}"] && unlink %{solr_install_link}
+[ -h "%{solr_install_link}" ] && unlink %{solr_install_link}
 ln -sT %{solr_install_dir} %{solr_install_link}
 
 # just enable the service, don't start it.
@@ -165,7 +165,7 @@ systemctl enable %{solr_service}
 echo "Stopping %{solr_service}."
 systemctl stop %{solr_service}
 # Remove symlink to current installation if it exists.
-[ -h "%{solr_install_link}"] && unlink %{solr_install_link}
+[ -h "%{solr_install_link}" ] && unlink %{solr_install_link}
 
 # Backup previous settings if we are upgrading.
 if [ "$1" -gt 0 ]; then
