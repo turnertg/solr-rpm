@@ -206,7 +206,7 @@ exit 0
 %__rm -rf "%{buildroot}"
 
 %files
-%defattr(0755,%{solr_user},%{solr_user})
+%defattr(0644,%{solr_user},%{solr_user},0755)
 %dir %{solr_log_dir}
 %dir %{solr_run_dir}
 %{solr_data_dir}
@@ -214,6 +214,9 @@ exit 0
 %{solr_config_dir}
 %attr(0644,%{solr_user},%{solr_user}) %{solr_service_dir}/%{solr_service}
 %attr(0644,%{solr_user},%{solr_user}) %{solr_env_dir}/solr.in.sh
+%attr(0755,%{solr_user},%{solr_user}) %{solr_bin_dir}/solr
+%attr(0755,%{solr_user},%{solr_user}) %{solr_bin_dir}/post
+%attr(0755,%{solr_user},%{solr_user}) %{solr_bin_dir}/oom_solr.sh
 # No need to mention config files as we handle them in upgrades explicitly.
 
 %changelog
