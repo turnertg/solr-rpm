@@ -44,10 +44,11 @@ SOLR_VERSION="$1"
 RPM_RELEASE="$2"
 
 # validate the inputs
-if [[ "$SOLR_VERSION" =~ ^[0-9]\.[0-9]+\.[0-9]+$ ]]; then
+if [[ "$SOLR_VERSION" =~ ^[5-9]\.[0-9]+\.[0-9]+$ ]]; then
   echo "Using Solr version: $SOLR_VERSION"
 else
-  echo "Invalid Solr version format.  Must be of the form x.x.x"
+  echo "Invalid Solr version format. Must be of the form x.x.x"
+  echo "Solr versions above 5.0.0 and less than 10 are supported."
   exit $EX_USAGE
 fi
 
