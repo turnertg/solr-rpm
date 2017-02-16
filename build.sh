@@ -63,13 +63,13 @@ done
 mkdir -p $sources_path
 # Move spec dir to build dir
 cp -R $current_dir/SPECS $rpmbuild_path/
-
+apache_archives='http://archive.apache.org/dist/lucene/solr/'
 if [ ! -f "$sources_path/solr-$SOLR_VERSION.tgz" ]; then
   mirrors='/tmp/solr_mirrors.html'
   # download the list of mirror sites
-  wget -O $mirrors http://www.apache.org/dyn/closer.cgi/lucene/solr/$SOLR_VERSION
+  wget -O $mirrors http://www.apache.org/dyn/closer.cgi/lucene/solr/$SOLR_VERSION &>/dev/null
   # append the archive site to end of file so that it is tried last if all mirrors fail
-  echo "http://archive.apache.org/dist/lucene/solr/$SOLR_VERSION/" | tee -a $mirrors
+  echo "$apache_archives$SOLR_VERSION/" | tee -a $mirrors &>/dev/null 
   # sometimes mirror is listed, but archive is not there. so try with all mirrors.
   # some mirrors automatically redirect to latest version. using --max-redirect=0 to avoid that.
   successfully_downloaded=1
@@ -84,6 +84,8 @@ if [ ! -f "$sources_path/solr-$SOLR_VERSION.tgz" ]; then
   if [ "$successfully_downloaded" -gt 0 ]; then
     echo -e "\nCould not download solr from mirrors."
     echo "You can download the file to $sources_path/solr-$SOLR_VERSION.tgz and rerun this script."
+    echo "Following versions are available for download and packaging:"
+    curl $apache_archives 2>&1 | grep -oP '[5-9]\.\d\.\d?' | uniq
     rm -f $sources_path/solr-$SOLR_VERSION.tgz
     exit 1
   fi
@@ -91,7 +93,7 @@ fi
 
 # get the SHA1 from Apache directly
 if [ ! -f $sources_path/solr-$SOLR_VERSION.tgz.sha1 ]; then
-  wget -O $sources_path/solr-$SOLR_VERSION.tgz.sha1 http://archive.apache.org/dist/lucene/solr/$SOLR_VERSION/solr-$SOLR_VERSION.tgz.sha1
+  wget -O $sources_path/solr-$SOLR_VERSION.tgz.sha1 "$apache_archives$SOLR_VERSION/solr-$SOLR_VERSION.tgz.sha1"
 fi
 
 # verify the integrity of the archive
