@@ -76,7 +76,7 @@ This package provides binaries for running the server distribution
 from the official website in RPM form. It includes embedded Jetty.
 
 %prep
-%setup -b 0 -n solr-%{solr_version}
+%setup -q -b 0 -n solr-%{solr_version}
 # Copy SystemD service definition to SOURCES... 
 cp -p %{_topdir}/../extra/%{solr_service} %{_builddir}/
 
@@ -128,7 +128,7 @@ cp -p $solr_root/bin/solr.in.sh "%{buildroot}%{solr_env_dir}/"
 cp -p $solr_root/server/resources/log4j.properties "%{buildroot}%{solr_config_dir}/"
 
 # install the systemd unit definition to /lib/systemd/system (works both on Debian and CentOS)
-%__install -m0744 %{solr_service} "%{buildroot}%{solr_service_dir}/"
+%__install -m0744 $solr_root/%{solr_service} "%{buildroot}%{solr_service_dir}/"
 
 # copy licenses and other text files.
 cp -Rp $solr_root/licenses %{buildroot}%{solr_install_dir}/
@@ -137,6 +137,7 @@ cp -p  $solr_root/*.txt %{buildroot}%{solr_install_dir}/
 # build the list of files packaged in this archive.
 [ -f %{packaged_files} ] && rm -f %{packaged_files}
 find %{buildroot} -type f -name '*' -print > %{packaged_files}
+
 %pre
 id -u %{solr_user} &> /dev/null
 if [ "$?" -ne "0" ]; then
@@ -162,6 +163,8 @@ systemctl enable %{solr_service}
 # Issuing stop irrespective of whether service is running or not is harmless.
 echo "Stopping %{solr_service}."
 systemctl stop %{solr_service}
+# Remove symlink to current installation if it exists.
+[ -h "%{solr_install_link}"] && unlink %{solr_install_link}
 
 # Backup previous settings if we are upgrading.
 if [ "$1" -gt 0 ]; then
@@ -171,8 +174,6 @@ if [ "$1" -gt 0 ]; then
   # Backup /etc/solr config
   echo "Backing up %{solr_config_dir}"
   [ -d %{solr_config_dir} ] && mv %{solr_config_dir} %{solr_config_dir}.%{solr_backup_str}
-  # Remove symlink to current installation if it exists.
-  [ -h "%{solr_install_link}"] && unlink %{solr_install_link}
   # Backup SystemD config as this release might be updating something in that.
   if [ -f "%{solr_service_dir}/%{solr_service}" ]; then
     echo "Backing up %{solr_service_dir}/%{solr_service}"
