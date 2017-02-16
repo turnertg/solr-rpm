@@ -48,6 +48,8 @@
 %define solr_service solr-server.service
 # string to append when backing up to upgrade
 %define solr_backup_str upgrading_to_%{solr_version}
+# file containing all the files installed by this rpm.
+%define packaged_files %{_builddir}/packaged_files.txt
 
 
 Name:           solr-server
@@ -88,17 +90,17 @@ sed -i'' 's|#SOLR_LOGS_DIR=|SOLR_LOGS_DIR=%{solr_log_dir}|g' $solr_env_file
 
 # Update paths in service definition
 systemd_unit_file="%{_builddir}/%{solr_service}"
-sed -i'' 's|SOLR_ENV_DIR|%{solr_env_dir}|g' $systemd_unit_file
-sed -i'' 's|SOLR_RUN_DIR|%{solr_run_dir}|g' $systemd_unit_file
-sed -i'' 's|SOLR_INSTALL_DIR|%{solr_install_link}|g' $systemd_unit_file
+sed -i'' 's|RPM_ENV_DIR|%{solr_env_dir}|g' $systemd_unit_file
+sed -i'' 's|RPM_RUN_DIR|%{solr_run_dir}|g' $systemd_unit_file
+sed -i'' 's|RPM_BIN_DIR|%{solr_bin_dir}|g' $systemd_unit_file
+sed -i'' 's|RPM_INSTALL_DIR|%{solr_install_link}|g' $systemd_unit_file
 
 # Because we are not packaging dist and 'post' script depends on it,
 # change the path of solr-core.*.jar to the one that is packaged here.
 # Source code analysis shows the util class used by 'post' script is
 # there in solr-core in server too.
-sed -i 's|$SOLR_TIP/dist|%{solr_install_link}/server/solr-webapp/webapp/WEB-INF/lib|g' bin/post
+sed -i 's|"$SOLR_TIP/dist"|%{solr_install_link}/server/solr-webapp/webapp/WEB-INF/lib|g' bin/post
  
-
 %build
 
 %install
@@ -132,6 +134,9 @@ cp -p $solr_root/server/resources/log4j.properties "%{buildroot}%{solr_config_di
 cp -Rp $solr_root/licenses %{buildroot}%{solr_install_dir}/
 cp -p  $solr_root/*.txt %{buildroot}%{solr_install_dir}/
 
+# build the list of files packaged in this archive.
+[ -f %{packaged_files} ] && rm -f %{packaged_files}
+find %{buildroot} -type f -name '*' -print > %{packaged_files}
 %pre
 id -u %{solr_user} &> /dev/null
 if [ "$?" -ne "0" ]; then
@@ -196,15 +201,9 @@ exit 0
 %clean
 %__rm -rf "%{buildroot}"
 
-%files
-%attr(-,%{solr_user},-) %{solr_install_dir}
-%dir %attr(-,%{solr_user},-) %{solr_var_dir}
-%dir %attr(-,%{solr_user},-) %{solr_var_dir}/data
-%config %attr(-,%{solr_user},-) %{solr_var_dir}/data/solr.xml
-%dir %attr(-,%{solr_user},-) %{solr_var_dir}/logs
-%config %attr(-,%{solr_user},-) %{solr_var_dir}/log4j.properties
-%config %attr(-,%{solr_user},-) %{solr_var_dir}/solr.in.sh
-%config %attr(0744,root,root) /etc/init.d/%{solr_service}
+%files -f %{packaged_files}
+%defattr(-,%{solr_user},-)
+# No need to mention config files as we handle them in upgrades explicitly.
 
 %changelog
 
