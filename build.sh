@@ -67,22 +67,23 @@ if [ ! -f "$sources_path/solr-$SOLR_VERSION.tgz" ]; then
   mirrors='/tmp/solr_mirrors.html'
   # download the list of mirror sites
   wget -O $mirrors http://www.apache.org/dyn/closer.cgi/lucene/solr/$SOLR_VERSION
-  # grab the fist link that contains the version we are looking for
-  download_links=$(grep -oP "(http.+?$SOLR_VERSION)?" /tmp/solr_mirrors.html | uniq)
+  # append the archive site to end of file so that it is tried last if all mirrors fail
+  echo "http://archive.apache.org/dist/lucene/solr/$SOLR_VERSION/" | tee -a $mirrors
   # actually download the archive from the mirror. 
   # sometimes mirror is listed, but archive is not there. so try with all mirrors.
   successfully_downloaded=1
-  for mirror in ${download_links[@]}; do
-      wget -O $sources_path/solr-$SOLR_VERSION.tgz $mirror/solr-$SOLR_VERSION.tgz
-      successfully_downloaded="$?"
+  for mirror in $(grep -oP "(http.+?$SOLR_VERSION)?" /tmp/solr_mirrors.html | uniq) ; do
+      echo "Trying to download from $mirror..."
+      wget --max-redirect=0 -O $sources_path/solr-$SOLR_VERSION.tgz $mirror/solr-$SOLR_VERSION.tgz &>/dev/null && successfully_downloaded=0 || successfully_downloaded="$?"
       [ "$successfully_downloaded" -eq 0 ] && break
   done
   # remove the tmp file.
   rm $mirrors
   
-  if [ "successfully_downloaded" -gt 0 ]; then
+  if [ "$successfully_downloaded" -gt 0 ]; then
     echo -e "\nCould not download solr from mirrors."
     echo "You can download the file to $sources_path/solr-$SOLR_VERSION.tgz and rerun this script."
+    rm -f $sources_path/solr-$SOLR_VERSION.tgz
     exit 1
   fi
 fi
