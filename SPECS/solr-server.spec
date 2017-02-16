@@ -114,7 +114,7 @@ done
 
 solr_root="%{_builddir}/solr-%{solr_version}"
 # install the main solr package in solr_install_dir
-cp -Rp "$solr_root/server/*" "%{buildroot}%{solr_install_dir}/server/"
+cp -Rp "$solr_root/server" "%{buildroot}%{solr_install_dir}/"
 
 # Bin files/scripts.
 # Do not copy Windows specific things and files that will not be living in bin folder.
