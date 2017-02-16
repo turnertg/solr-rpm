@@ -150,6 +150,7 @@ fi
 
 %post
 # Make a symlink to installed version so that upgrades are easier
+[ -h "%{solr_install_link}"] && unlink %{solr_install_link}
 ln -sT %{solr_install_dir} %{solr_install_link}
 
 # just enable the service, don't start it.
