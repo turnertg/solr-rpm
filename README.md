@@ -2,7 +2,8 @@
 
 ## Introduction
 
-RPM packaging instructions and scripts to package Solr server.
+RPM packaging instructions and scripts to package Solr server for
+enterprise use.
 
 ## Usage
 
@@ -15,6 +16,39 @@ To use, first setup your development environment by running
 Once that is done you can build an RPM by running
 
     ./build.sh 5.3.0 mycompany
+
+Install the built RPM using
+
+    sudo yum install -y /path/to/solr.rpm
+
+By default, the solr service is not started as the user might want to make
+some changes to configs or cores, but is registered to automatically start
+when the machine establishes network connection when starting up. You can
+start the service as follows
+
+    sudo systemctl start solr-server
+
+And stop it using
+
+    sudo systemctl stop solr-server
+
+The `solr` and `post` scripts are packaged too and put in `/usr/local/bin`,
+which means they will be available on CLI like any other application. For
+example, you can check solr health using 
+
+    solr healthcheck -c <collection> -z <zkHost>
+
+Although you can stop solr-server using `solr stop`, it is *NOT* recommended.
+Because:
+
+1. Once `solr stop` is issued, server will stop and cleanly exit but will 
+likely not clean the PID file (unless `sudo` is used).
+2. If Solr cleanly exits, `systemctl` will not detect a stop and will not
+try to restart it, but will remain in `active (exited)` state.
+3. Above two points mean PID file will point to a killed process.
+4. Issuing `systemctl stop solr-server` after `solr stop` will fail the stop
+process and will only clean the PID file. You can normally start after that.
+
 
 ## Notes for packagers
 
