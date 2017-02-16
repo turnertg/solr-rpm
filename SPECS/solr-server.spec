@@ -22,10 +22,11 @@
 # and it is not needed since there are no platform dependent jars in the archive
 %define __jar_repack %{nil}
 
-# Rationale: http://www.pathname.com/fhs/pub/fhs-2.3.html#THEUSRHIERARCHY
-%define solr_install_dir /usr/local/solr-%{solr_version}
+
 # Solr installation symlink. Use this in scripts and paths.
 %define solr_install_link /usr/local/solr
+# Rationale: http://www.pathname.com/fhs/pub/fhs-2.3.html#THEUSRHIERARCHY
+%define solr_install_dir %{solr_install_link}-%{solr_version}
 # path where solr will log.
 %define solr_log_dir /var/log/solr
 # Rationale: http://www.pathname.com/fhs/pub/fhs-2.3.html#SRVDATAFORSERVICESPROVIDEDBYSYSTEM
@@ -48,8 +49,6 @@
 %define solr_service solr-server.service
 # string to append when backing up to upgrade
 %define solr_backup_str upgrading_to_%{solr_version}
-# file containing all the files installed by this rpm.
-%define packaged_files %{_builddir}/packaged_files.txt
 
 
 Name:           solr-server
@@ -88,6 +87,10 @@ sed -i'' 's|^#SOLR_HOME.*$|SOLR_HOME=%{solr_data_dir}|g' $solr_env_file
 sed -i'' 's|^#LOG4J_PROPS.*$|LOG4J_PROPS=%{solr_config_dir}/log4j.properties|g' $solr_env_file
 sed -i'' 's|^#SOLR_LOGS_DIR.*$|SOLR_LOGS_DIR=%{solr_log_dir}|g' $solr_env_file
 sed -i'' 's|^#SOLR_PORT.*$|SOLR_PORT=%{solr_port}|g' $solr_env_file
+# Append DEFAULT_SERVER_DIR to solr_env_file so that embedded tools can work.
+# It is not there in env file supplied by the package.
+echo -e '\n# Directory where the server code resides.' | tee -a $solr_env_file
+echo    'DEFAULT_SERVER_DIR=%{solr_install_link}/server' | tee -a $solr_env_file
 
 # Update paths in service definition
 systemd_unit_file="%{_builddir}/%{solr_service}"
@@ -109,7 +112,15 @@ sed -i 's|"$SOLR_TIP/dist"|%{solr_install_link}/server/solr-webapp/webapp/WEB-IN
 rm -rf "%{buildroot}"
 
 # make all directories.
-for dir in %{solr_install_dir} %{solr_log_dir} %{solr_run_dir} %{solr_data_dir} %{solr_config_dir} %{solr_bin_dir} %{solr_env_dir} %{solr_service_dir}
+for dir in \
+  %{solr_install_dir} \
+  %{solr_log_dir} \
+  %{solr_run_dir} \
+  %{solr_data_dir} \
+  %{solr_config_dir} \
+  %{solr_bin_dir} \
+  %{solr_env_dir} \
+  %{solr_service_dir}
 do
   %__install -d "%{buildroot}$dir"
 done
@@ -135,10 +146,6 @@ cp -p $solr_root/server/resources/log4j.properties "%{buildroot}%{solr_config_di
 # copy licenses and other text files.
 cp -Rp $solr_root/licenses %{buildroot}%{solr_install_dir}/
 cp -p  $solr_root/*.txt %{buildroot}%{solr_install_dir}/
-
-# build the list of files packaged in this archive.
-[ -f %{packaged_files} ] && rm -f %{packaged_files}
-find %{buildroot} -type f -name '*' -print | sed 's,%{buildroot},,g' > %{packaged_files}
 
 %pre
 id -u %{solr_user} &> /dev/null
