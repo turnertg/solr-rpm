@@ -190,7 +190,17 @@ exit 0
 if [ "$1" == 0 ]; then
     # if this is uninstallation as opposed to upgrade, delete the service
     systemctl disable %{solr_service}
-    for dir in %{solr_install_dir} %{solr_log_dir} %{solr_run_dir} %{solr_data_dir} %{solr_config_dir} %{solr_bin_dir} %{solr_env_dir}/solr.in.sh %{solr_service_dir}/%{solr_service}
+    for dir in \
+        %{solr_install_dir} \
+        %{solr_log_dir} \
+        %{solr_run_dir} \
+        %{solr_data_dir} \
+        %{solr_config_dir} \
+        %{solr_bin_dir}/solr \
+        %{solr_bin_dir}/post \
+        %{solr_bin_dir}/oom_solr.sh \
+        %{solr_env_dir}/solr.in.sh \
+        %{solr_service_dir}/%{solr_service}
     do
       echo "Removing $dir"
       rm -rf $dir
