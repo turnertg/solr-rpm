@@ -194,7 +194,7 @@ if [ "$1" == 0 ]; then
       rm -rf $dir
     done
     # delete the user
-    userdel --force --remove %{solr_user}
+    userdel %{solr_user}
     # Reload systemctl daemon
     systemctl daemon-reload
 fi
