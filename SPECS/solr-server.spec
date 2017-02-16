@@ -136,7 +136,7 @@ cp -p  $solr_root/*.txt %{buildroot}%{solr_install_dir}/
 
 # build the list of files packaged in this archive.
 [ -f %{packaged_files} ] && rm -f %{packaged_files}
-find %{buildroot} -type f -name '*' -print > %{packaged_files}
+find %{buildroot} -type f -name '*' -print | sed 's,%{buildroot},,g' > %{packaged_files}
 
 %pre
 id -u %{solr_user} &> /dev/null
