@@ -55,17 +55,22 @@ fi
 current_dir=$(dirname ${0})
 rpmbuild_path=$(realpath $current_dir/rpmbuild)
 sources_path="$rpmbuild_path/SOURCES"
+apache_archives='http://archive.apache.org/dist/lucene/solr/'
+mirrors='/tmp/solr_mirrors.html'
+archive="solr-$SOLR_VERSION.tgz"
+
 # clean the working directories. Do not remove SOURCES dir if it is already there.
 for dir in BUILD RPMS SRPMS BUILDROOT; do
   rm -rf $rpmbuild_path/$dir || true
   mkdir -p $rpmbuild_path/$dir
 done
+
 mkdir -p $sources_path
 # Move spec dir to build dir
 cp -R $current_dir/SPECS $rpmbuild_path/
-apache_archives='http://archive.apache.org/dist/lucene/solr/'
-if [ ! -f "$sources_path/solr-$SOLR_VERSION.tgz" ]; then
-  mirrors='/tmp/solr_mirrors.html'
+
+if [ ! -f "$sources_path/$archive" ]; then
+  
   # download the list of mirror sites
   wget -O $mirrors http://www.apache.org/dyn/closer.cgi/lucene/solr/$SOLR_VERSION &>/dev/null
   # append the archive site to end of file so that it is tried last if all mirrors fail
@@ -73,9 +78,9 @@ if [ ! -f "$sources_path/solr-$SOLR_VERSION.tgz" ]; then
   # sometimes mirror is listed, but archive is not there. so try with all mirrors.
   # some mirrors automatically redirect to latest version. using --max-redirect=0 to avoid that.
   successfully_downloaded=1
-  for mirror in $(grep -oP "(http.+?$SOLR_VERSION)?" /tmp/solr_mirrors.html | uniq) ; do
+  for mirror in $(grep -oP "(http.+?$SOLR_VERSION)?" $mirrors | uniq) ; do
       echo "Trying to download from $mirror..."
-      wget --max-redirect=0 -O $sources_path/solr-$SOLR_VERSION.tgz $mirror/solr-$SOLR_VERSION.tgz &>/dev/null && successfully_downloaded=0 || successfully_downloaded="$?"
+      wget --max-redirect=0 -O $sources_path/$archive $mirror/$archive &>/dev/null && successfully_downloaded=0 || successfully_downloaded="$?"
       [ "$successfully_downloaded" -eq 0 ] && break
   done
   # remove the tmp file.
@@ -83,36 +88,36 @@ if [ ! -f "$sources_path/solr-$SOLR_VERSION.tgz" ]; then
   
   if [ "$successfully_downloaded" -gt 0 ]; then
     echo -e "\nCould not download solr from mirrors."
-    echo "You can download the file to $sources_path/solr-$SOLR_VERSION.tgz and rerun this script."
+    echo "You can download the file to $sources_path/$archive and rerun this script."
     echo "Following versions are available for download and packaging:"
     curl $apache_archives 2>&1 | grep -oP '[5-9]\.\d\.\d?' | uniq
-    rm -f $sources_path/solr-$SOLR_VERSION.tgz
+    rm -f $sources_path/$archive
     exit 1
   fi
 fi
 
 # get the SHA1 from Apache directly
-if [ ! -f $sources_path/solr-$SOLR_VERSION.tgz.sha1 ]; then
-  wget -O $sources_path/solr-$SOLR_VERSION.tgz.sha1 "$apache_archives$SOLR_VERSION/solr-$SOLR_VERSION.tgz.sha1"
+if [ ! -f $sources_path/$archive.sha1 ]; then
+  wget -O $sources_path/$archive.sha1 "$apache_archives$SOLR_VERSION/$archive.sha1"
 fi
 
 # verify the integrity of the archive
 # the sha1 file has the file name at the end, so use a regex to just pull the sha1 part out of the file
-SHA1=$(<$sources_path/solr-$SOLR_VERSION.tgz.sha1)
+SHA1=$(<$sources_path/$archive.sha1)
 [[ $SHA1 =~ ^([0-9a-f]+) ]]
 SHA1="${BASH_REMATCH[1]}"
 
 # use openssl to generate the sha1 for the local archive
-LOCAL_SHA1=$(openssl sha1 $sources_path/solr-$SOLR_VERSION.tgz)
+LOCAL_SHA1=$(openssl sha1 $sources_path/$archive)
 # openssl puts the file name at the beginning, so use another regex to pull just the sha1
 [[ $LOCAL_SHA1 =~ ([0-9a-f]+)$ ]]
 LOCAL_SHA1="${BASH_REMATCH[1]}"
 
 if [ $LOCAL_SHA1 == $SHA1 ]; then
-  echo "SHA1 for $sources_path/solr-$SOLR_VERSION.tgz checks out: $SHA1"
+  echo "SHA1 for $sources_path/$archive checks out: $SHA1"
 else
   rm -f $sources_path/solr*
-  echo "ERROR! $sources_path/solr-$SOLR_VERSION.tgz download was not successful (checksum did not match)."
+  echo "ERROR! $sources_path/$archive download was not successful (checksum did not match)."
   echo "       The file has been deleted. Please rerun the script."
   exit $EX_DATAERR
 fi
