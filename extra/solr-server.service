@@ -5,11 +5,11 @@ Documentation=https://wiki.apache.org/solr/FrontPage
 Description=Apache Solr Service
 After=network-online.target
 Conflicts=shutdown.target
-PassEnvironment=PATH JAVA_HOME
 
 [Service]
 EnvironmentFile=RPM_ENV_DIR/solr.in.sh
 Environment="SOLR_INCLUDE=RPM_ENV_DIR/solr.in.sh"
+PassEnvironment=PATH JAVA_HOME
 Type=forking
 TimeoutSec=5min
 IgnoreSIGPIPE=no
