@@ -49,6 +49,22 @@ try to restart it, but will remain in `active (exited)` state.
 4. Issuing `systemctl stop solr-server` after `solr stop` will fail the stop
 process and will only clean the PID file. You can normally start after that.
 
+## Directory tree
+
+1. All configs (except that of embeded Jetty), including cores,
+lives in `/etc/solr`.
+2. Unlike the distribution, data is supposed to live in `/srv/solr` so that
+you can have configs completely separate from data and have data live on
+some other drive/partition if need be. Upstream Solr distribution tightly
+couples where cores configs and its data lives.
+3. Constants/environment variables are defined in `/etc/default/solr.in.sh`.
+4. SystemD definition lives at `/lib/systemd/system/solr-server.service`.
+5. Binaries live in `/usr/local/solr-<version>` with `/usr/local/solr`
+pointing to it as a symlink.
+6. `solr` and `post` scripts are packaged and live in `/usr/local/bin`.
+Because of their path, these scripts will be available after installation.
+Please see notes regarding using `solr start` and `solr stop` in previous
+section.
 
 ## Notes for packagers
 
