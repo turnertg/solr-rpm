@@ -91,7 +91,7 @@ sed -i'' 's|^#SOLR_PORT.*$|SOLR_PORT="%{solr_port}"|g' $solr_env_file
 # We're splitting places where data and config for solr will reside. So far, it is not
 # exposed as a simple variable, so will be passing it as an option to java for solr.
 sed -i'' '/^#SOLR_OPTS.*$/{i\
-SOLR_OPTS="$SOLR_OPTS -Dsolr.data.dir=%{solr_data_dir}"
+SOLR_OPTS="-Dsolr.data.dir=%{solr_data_dir}"
 ; :loop n; b loop}' $solr_env_file
 
 # Append DEFAULT_SERVER_DIR to solr_env_file so that embedded tools can work.
