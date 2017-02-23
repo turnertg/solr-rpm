@@ -90,8 +90,8 @@ sed -i'' 's|^#SOLR_PORT.*$|SOLR_PORT="%{solr_port}"|g' $solr_env_file
 
 # We're splitting places where data and config for solr will reside. So far, it is not
 # exposed as a simple variable, so will be passing it as an option to java for solr.
-solr_options='\$SOLR_OPTS -Dsolr.data.dir=%{solr_data_dir}'
-sed -i'' 's|^#SOLR_OPTS.*$|a SOLR_OPTS="$solr_options"' $solr_env_file
+solr_options='$SOLR_OPTS -Dsolr.data.dir=%{solr_data_dir}'
+sed -i'' '/^#SOLR_OPTS.*$/a SOLR_OPTS="$solr_options"' $solr_env_file
 
 # Append DEFAULT_SERVER_DIR to solr_env_file so that embedded tools can work.
 # It is not there in env file supplied by the package and is hard coded to be
@@ -142,15 +142,16 @@ for file in oom_solr.sh post solr; do
   cp -Rp "$solr_root/bin/$file" "%{buildroot}%{solr_bin_dir}/$file"
 done
 
-# copy config
+# Consolidate Solr config. (this does not handle jetty config)
+rpmtree_solr_dir="%{buildroot}%{solr_install_dir}"
 cp -p $solr_root/bin/solr.in.sh "%{buildroot}%{solr_env_dir}/"
-mv %{buildroot}%{solr_install_dir}/solr/server/resources/log4j.properties "%{buildroot}%{solr_config_dir}/"
+mv $rpmtree_solr_dir/server/resources/log4j.properties "%{buildroot}%{solr_config_dir}/"
 # Move the configs from server/solr to solr_config_dir
-mv "%{buildroot}%{solr_install_dir}/solr/zoo.cfg" "%{buildroot}%{solr_config_dir}/"
-mv "%{buildroot}%{solr_install_dir}/solr/solr.xml" "%{buildroot}%{solr_config_dir}/"
+mv "$rpmtree_solr_dir/solr/zoo.cfg" "%{buildroot}%{solr_config_dir}/"
+mv "$rpmtree_solr_dir/solr/solr.xml" "%{buildroot}%{solr_config_dir}/"
 # Remove the solr folder from $solr_root/server because it is empty at this 
 # point and will not be used.
-rm -rf %{buildroot}%{solr_install_dir}/solr
+rm -rf $rpmtree_solr_dir/solr
 
 # install the systemd unit definition to /lib/systemd/system (works both on Debian and CentOS)
 %__install -m0744 %{_builddir}/%{solr_service} "%{buildroot}%{solr_service_dir}/"
