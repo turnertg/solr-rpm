@@ -3,7 +3,7 @@
 ## Introduction
 
 RPM packaging instructions and scripts to package Solr server for
-enterprise use.
+*enterprise* use.
 
 ## Usage
 
@@ -56,15 +56,15 @@ lives in `/etc/solr`.
 2. Unlike the distribution, data is supposed to live in `/srv/solr` so that
 you can have configs completely separate from data and have data live on
 some other drive/partition if need be. Upstream Solr distribution tightly
-couples where cores configs and its data lives.
+couples where cores' config and its data lives.
 3. Constants/environment variables are defined in `/etc/default/solr.in.sh`.
 4. SystemD definition lives at `/lib/systemd/system/solr-server.service`.
 5. Binaries live in `/usr/local/solr-<version>` with `/usr/local/solr`
 pointing to it as a symlink.
 6. `solr` and `post` scripts are packaged and live in `/usr/local/bin`.
-Because of their path, these scripts will be available after installation.
-Please see notes regarding using `solr start` and `solr stop` in previous
-section.
+Because of their path, these scripts will be available after installation
+as system wide commands on CLI. Please see notes regarding using 
+`solr start` and `solr stop` in previous section.
 
 ## Notes for packagers
 
