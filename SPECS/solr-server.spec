@@ -90,14 +90,15 @@ sed -i'' 's|^#SOLR_PORT.*$|SOLR_PORT="%{solr_port}"|g' $solr_env_file
 
 # We're splitting places where data and config for solr will reside. So far, it is not
 # exposed as a simple variable, so will be passing it as an option to java for solr.
-solr_options='$SOLR_OPTS -Dsolr.data.dir=%{solr_data_dir}'
-sed -i'' '/^#SOLR_OPTS.*$/a SOLR_OPTS="$solr_options"' $solr_env_file
+sed -i'' '/^#SOLR_OPTS.*$/{i\
+SOLR_OPTS="$SOLR_OPTS -Dsolr.data.dir=%{solr_data_dir}"
+; :loop n; b loop}' $solr_env_file
 
 # Append DEFAULT_SERVER_DIR to solr_env_file so that embedded tools can work.
 # It is not there in env file supplied by the package and is hard coded to be
 # used in function run_tool(). 
 echo -e '\n# Directory where the server code resides.' | tee -a $solr_env_file
-echo -e 'DEFAULT_SERVER_DIR=%{solr_install_link}/server\n' | tee -a $solr_env_file
+echo -e 'DEFAULT_SERVER_DIR="%{solr_install_link}/server"\n' | tee -a $solr_env_file
 
 # Update paths in service definition
 systemd_unit_file="%{_builddir}/%{solr_service}"
@@ -143,9 +144,9 @@ for file in oom_solr.sh post solr; do
 done
 
 # Consolidate Solr config. (this does not handle jetty config)
-rpmtree_solr_dir="%{buildroot}%{solr_install_dir}"
+rpmtree_solr_dir="%{buildroot}%{solr_install_dir}/server"
 cp -p $solr_root/bin/solr.in.sh "%{buildroot}%{solr_env_dir}/"
-mv $rpmtree_solr_dir/server/resources/log4j.properties "%{buildroot}%{solr_config_dir}/"
+mv $rpmtree_solr_dir/resources/log4j.properties "%{buildroot}%{solr_config_dir}/"
 # Move the configs from server/solr to solr_config_dir
 mv "$rpmtree_solr_dir/solr/zoo.cfg" "%{buildroot}%{solr_config_dir}/"
 mv "$rpmtree_solr_dir/solr/solr.xml" "%{buildroot}%{solr_config_dir}/"
@@ -250,6 +251,10 @@ exit 0
 # No need to mention config files as we handle them in upgrades explicitly.
 
 %changelog
+
+* Wed Feb 22 2017 talk@devghai.com
+- Splitting data and core config directories
+- Solr changes (v4.0.0 & above): http://archive.apache.org/dist/lucene/solr/%{solr_version}/changes/Changes.html
 
 * Wed Feb 15 2017 talk@devghai.com
 - Packaging for CentOS
