@@ -100,6 +100,11 @@ SOLR_OPTS="-Dsolr.data.dir=%{solr_data_dir}"
 echo -e '\n# Directory where the server code resides.' | tee -a $solr_env_file
 echo -e 'DEFAULT_SERVER_DIR="%{solr_install_link}/server"\n' | tee -a $solr_env_file
 
+# Similar to DEFAULT_SERVER_DIR, set SOLR_TIP because SOLR_HOME is ignored
+# and value of SOLR_TIP is supplied to -Dsolr.install.dir during startup.
+echo -e '\n# Directory where solr is installed.' | tee -a $solr_env_file
+echo -e 'SOLR_TIP="%{solr_install_link}"\n' | tee -a $solr_env_file
+
 # Update paths in service definition
 systemd_unit_file="%{_builddir}/%{solr_service}"
 sed -i'' 's|RPM_PORT|%{solr_port}|g' $systemd_unit_file
