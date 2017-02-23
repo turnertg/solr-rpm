@@ -78,8 +78,9 @@ if [ ! -f "$sources_path/$archive" ]; then
   # sometimes mirror is listed, but archive is not there. so try with all mirrors.
   # some mirrors automatically redirect to latest version. using --max-redirect=0 to avoid that.
   successfully_downloaded=1
+  echo "Trying to download from..."
   for mirror in $(grep -oP "(http.+?$SOLR_VERSION)?" $mirrors | uniq) ; do
-      echo "Trying to download from $mirror..."
+      echo "* $mirror"
       wget --max-redirect=0 -O $sources_path/$archive $mirror/$archive &>/dev/null && successfully_downloaded=0 || successfully_downloaded="$?"
       [ "$successfully_downloaded" -eq 0 ] && break
   done
