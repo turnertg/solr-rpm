@@ -82,16 +82,22 @@ cp -p %{_topdir}/../extra/%{solr_service} %{_builddir}/
 # Do some substitutions in scripts and configs to reflect constants defined in this spec file.
 # Substitutions in place of patches will make maintenance easier.
 solr_env_file='%{_builddir}/solr-%{solr_version}/bin/solr.in.sh'
-sed -i'' 's|^#SOLR_PID_DIR.*$|SOLR_PID_DIR=%{solr_run_dir}|g' $solr_env_file
-sed -i'' 's|^#SOLR_HOME.*$|SOLR_HOME=%{solr_data_dir}|g' $solr_env_file
-sed -i'' 's|^#LOG4J_PROPS.*$|LOG4J_PROPS=%{solr_config_dir}/log4j.properties|g' $solr_env_file
-sed -i'' 's|^#SOLR_LOGS_DIR.*$|SOLR_LOGS_DIR=%{solr_log_dir}|g' $solr_env_file
-sed -i'' 's|^#SOLR_PORT.*$|SOLR_PORT=%{solr_port}|g' $solr_env_file
+sed -i'' 's|^#SOLR_PID_DIR.*$|SOLR_PID_DIR="%{solr_run_dir}"|g' $solr_env_file
+sed -i'' 's|^#SOLR_HOME.*$|SOLR_HOME="%{solr_config_dir}"|g' $solr_env_file
+sed -i'' 's|^#LOG4J_PROPS.*$|LOG4J_PROPS="%{solr_config_dir}/log4j.properties"|g' $solr_env_file
+sed -i'' 's|^#SOLR_LOGS_DIR.*$|SOLR_LOGS_DIR="%{solr_log_dir}"|g' $solr_env_file
+sed -i'' 's|^#SOLR_PORT.*$|SOLR_PORT="%{solr_port}"|g' $solr_env_file
+
+# We're splitting places where data and config for solr will reside. So far, it is not
+# exposed as a simple variable, so will be passing it as an option to java for solr.
+solr_options='\$SOLR_OPTS -Dsolr.data.dir=%{solr_data_dir}'
+sed -i'' 's|^#SOLR_OPTS.*$|a SOLR_OPTS="$solr_options"' $solr_env_file
+
 # Append DEFAULT_SERVER_DIR to solr_env_file so that embedded tools can work.
 # It is not there in env file supplied by the package and is hard coded to be
 # used in function run_tool(). 
 echo -e '\n# Directory where the server code resides.' | tee -a $solr_env_file
-echo    'DEFAULT_SERVER_DIR=%{solr_install_link}/server' | tee -a $solr_env_file
+echo -e 'DEFAULT_SERVER_DIR=%{solr_install_link}/server\n' | tee -a $solr_env_file
 
 # Update paths in service definition
 systemd_unit_file="%{_builddir}/%{solr_service}"
@@ -137,9 +143,14 @@ for file in oom_solr.sh post solr; do
 done
 
 # copy config
-cp -p $solr_root/server/solr/solr.xml "%{buildroot}%{solr_data_dir}/"
 cp -p $solr_root/bin/solr.in.sh "%{buildroot}%{solr_env_dir}/"
-cp -p $solr_root/server/resources/log4j.properties "%{buildroot}%{solr_config_dir}/"
+mv %{buildroot}%{solr_install_dir}/solr/server/resources/log4j.properties "%{buildroot}%{solr_config_dir}/"
+# Move the configs from server/solr to solr_config_dir
+mv "%{buildroot}%{solr_install_dir}/solr/zoo.cfg" "%{buildroot}%{solr_config_dir}/"
+mv "%{buildroot}%{solr_install_dir}/solr/solr.xml" "%{buildroot}%{solr_config_dir}/"
+# Remove the solr folder from $solr_root/server because it is empty at this 
+# point and will not be used.
+rm -rf %{buildroot}%{solr_install_dir}/solr
 
 # install the systemd unit definition to /lib/systemd/system (works both on Debian and CentOS)
 %__install -m0744 %{_builddir}/%{solr_service} "%{buildroot}%{solr_service_dir}/"
