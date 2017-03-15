@@ -105,6 +105,9 @@ echo -e 'DEFAULT_SERVER_DIR="%{solr_install_link}/server"\n' | tee -a $solr_env_
 echo -e '\n# Directory where solr is installed.' | tee -a $solr_env_file
 echo -e 'SOLR_TIP="%{solr_install_link}"\n' | tee -a $solr_env_file
 
+# Change the location of oom_solr.sh when starting up solr in 'solr' script.
+sed -i 's|$SOLR_TIP/bin/oom_solr.sh|%{solr_bin_dir}/oom_solr.sh|g' bin/solr
+
 # Update paths in service definition
 systemd_unit_file="%{_builddir}/%{solr_service}"
 sed -i'' 's|RPM_PORT|%{solr_port}|g' $systemd_unit_file
