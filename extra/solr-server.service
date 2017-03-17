@@ -19,8 +19,6 @@ Type=forking
 # Service startup timeout as noted in packaged solr script.
 TimeoutSec=5min
 
-KillMode=process
-
 # Script stores the PID in a file on startup. No need to guess it.
 GuessMainPID=no
 
