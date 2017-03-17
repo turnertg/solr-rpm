@@ -38,16 +38,13 @@ can check solr health using
 
     solr healthcheck -c <collection> -z <zkHost>
 
-Although you can stop solr-server using `solr stop`, it is *NOT* recommended.
-Because:
+Although you can stop solr-server using `solr stop`, it is *NOT* recommended
+because SystemD is configured to automatically restart the service and will
+hence lead to undesired behavior.
 
-1. Once `solr stop` is issued, server will stop and cleanly exit but will 
-likely not clean the PID file (unless `sudo` is used).
-2. If Solr cleanly exits, `systemctl` will not detect a stop and will not
-try to restart it, but will remain in `active (exited)` state.
-3. Above two points mean PID file will point to a killed process.
-4. Issuing `systemctl stop solr-server` after `solr stop` will cause a failure,
-but will clean the PID file. You can start `solr-server` normally after that.
+If you want to conduct experiments, it will be better to start solr on any port
+other than 8983 using `solr start`. See `solr --help` for details after
+installation.
 
 ## Directory tree
 
@@ -63,8 +60,7 @@ distribution tightly couples where cores' config and corresponding data live.
 pointing to it as a symlink.
 6. `solr` and `post` scripts are installed to `/usr/local/bin`.
 Depending on your `PATH` variable, these scripts will be available after
-installation as system wide commands on CLI. Please see notes regarding using 
-`solr start` and `solr stop` in previous section.
+installation as system wide commands on CLI.
 
 ## Notes for packagers
 
