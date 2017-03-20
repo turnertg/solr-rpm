@@ -38,18 +38,6 @@ if [ "$EUID" -gt 0 ]; then
   exit $EX_CONFIG
 fi
 
-# Make sure we have the repos enabled, other wise the install step will fail.
-repos=('epel' 'extras')
-repo_string=$(join "|" "${repos[@]}")
-needed_repo_count="${#repos[*]}"
-system_repo_count=$(yum repolist | grep -oE "${repo_string}" | sort -u | wc -l)
-
-if [ "$system_repo_count" -ne "$needed_repo_count" ]; then
-  echo "Please make sure following repos are enabled as they are needed to install some packages: ${repo_string}"
-  echo "Reference: https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html/Deployment_Guide/sec-Managing_Yum_Repositories.html"
-  exit $EX_CONFIG
-fi
-
 PACKAGES_NEEDED=('wget' 'openssl' 'coreutils')
 PACKAGES_TO_INSTALL=()
 
@@ -64,7 +52,19 @@ for pkg in ${PACKAGES_NEEDED[@]}; do
   fi
 done
 
-if [ ${#PACKAGES_TO_INSTALL[@]} -gt 0 ]; then
+if [ ${#PACKAGES_TO_INSTALL[@]} -gt 0 ]; then 
+  # Make sure we have the repos enabled, other wise the install step will fail.
+  repos=('epel' 'extras')
+  repo_string=$(join "|" "${repos[@]}")
+  needed_repo_count="${#repos[*]}"
+  system_repo_count=$(yum repolist | grep -oE "${repo_string}" | sort -u | wc -l)
+
+  if [ "$system_repo_count" -ne "$needed_repo_count" ]; then
+    echo "Please make sure following repos are enabled as they are needed to install some packages: ${repo_string}"
+    echo "Reference: https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html/Deployment_Guide/sec-Managing_Yum_Repositories.html"
+    exit $EX_CONFIG
+  fi
+
   PACKAGES_STRING=$(join " " "${PACKAGES_TO_INSTALL[@]}")
   yum install -y "$PACKAGES_STRING"
 fi
