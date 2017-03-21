@@ -75,12 +75,14 @@ if [ ! -f "$sources_path/$archive" ]; then
   wget -O $mirrors http://www.apache.org/dyn/closer.cgi/lucene/solr/$SOLR_VERSION &>/dev/null
   # append the archive site to end of file so that it is tried last if all mirrors fail
   echo "$apache_archives$SOLR_VERSION/" | tee -a $mirrors &>/dev/null 
-  # sometimes mirror is listed, but archive is not there. so try with all mirrors.
-  # some mirrors automatically redirect to latest version. using --max-redirect=0 to avoid that.
+
   successfully_downloaded=1
   echo "Trying to download from..."
   for mirror in $(grep -oP "(http.+?$SOLR_VERSION)?" $mirrors | uniq) ; do
       echo "* $mirror"
+      # wget fails when there is a 404 and the script ends, even in subshell ( using $() )
+      # Using && and || to capture success and failure respectively.
+      # some mirrors automatically redirect to latest version. using --max-redirect=0 to avoid that.
       wget --max-redirect=0 -O $sources_path/$archive $mirror/$archive &>/dev/null && successfully_downloaded=0 || successfully_downloaded="$?"
       [ "$successfully_downloaded" -eq 0 ] && break
   done
