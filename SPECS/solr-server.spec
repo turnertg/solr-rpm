@@ -60,7 +60,7 @@ Source0:        solr-%{solr_version}.tgz
 URL:            http://lucene.apache.org/solr/
 Group:          System Environment/Daemons
 License:        Apache License, Version 2.0
-Requires:       java-1.8.0-openjdk-headless >= 1.8.0, systemd, lsof, gawk, coreutils, shadow-utils
+Requires:       java-1.8.0-openjdk-headless, systemd, lsof, gawk, coreutils, shadow-utils
 BuildArch:      noarch
 BuildRequires:  tar, sed, coreutils
 Vendor:         Apache Software Foundation
