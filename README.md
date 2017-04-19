@@ -32,9 +32,9 @@ And stop it using
 
     sudo systemctl stop solr-server
 
-The `solr` and `post` scripts are installed to `/usr/local/bin`, and are 
+The `solr` and `post` scripts are installed to `/usr/local/bin`, and are
 expected to be available on CLI like any other application. For example, you
-can check solr health using 
+can check solr health using
 
     solr healthcheck -c <collection> -z <zkHost>
 
@@ -64,15 +64,15 @@ installation as system wide commands on CLI.
 
 ## Notes for packagers
 
-1. Constants defined at the top of spec file should tell you where most of 
+1. Constants defined at the top of spec file should tell you where most of
 the things go.
-2. SystemD service definition has placeholders defined (they start with `RPM_`) 
+2. SystemD service definition has placeholders defined (they start with `RPM_`)
 that are replaced with constants from spec file. The same constants are
 used to set values in `solr.in.sh`. This makes it easy to reorganize
 installation while making us a little impervious to upstream changes.
-3. This spec file only packages the `server`, `licenses` and `bin` directories 
-from official Solr archive. The full distribution contains full javadocs in 
-HTML, bunch of plugins, distribution JARs and examples that are normally not 
+3. This spec file only packages the `server`, `licenses` and `bin` directories
+from official Solr archive. The full distribution contains full javadocs in
+HTML, bunch of plugins, distribution JARs and examples that are normally not
 needed in enterprise deployments.
 4. Code in this repo has been tested on CentOS 7.3 to package 6.4.x Solr.
 Packaging 5.x.x should work, but has not been tested. Please feel free to make
@@ -80,11 +80,15 @@ pull requests for bugs that you find. Ongoing support is not guaranteed.
 5. The spec file currently puts Java 1.8 in dependencies. If you are packaging
 older versions, it might be better to change that to whatever is applicable
 for that release.
+6. Does not adhere to best practices. Some refactoring is needed. See:
+    - https://fedoraproject.org/wiki/Packaging:Java?rd=Packaging/Java
+    - https://fedoraproject.org/wiki/Packaging:Scriptlets?rd=Packaging:ScriptletSnippets
 
 ## License
 
 Although the code has deviated significantly from original repo, the copyright
-notices have been preserved wherever they appeared.
+notices have been preserved wherever they appeared. Same license applies for
+code in this repo too.
 
 ### Original notice
 
