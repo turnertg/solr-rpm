@@ -23,3 +23,4 @@ SOURCES/
 
 # Ignore Visual Studio Code files.
 .vscode
+rpmbuild/
