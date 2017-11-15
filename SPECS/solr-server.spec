@@ -41,6 +41,8 @@
 %define solr_env_dir /etc/default
 # directory that will hold SystemD service definition for solr
 %define solr_service_dir /lib/systemd/system
+# directory that will hold SystemD definition creating volatile directory in /run
+%define solr_tmpfiles_dir /usr/lib/tmpfiles.d
 # matches SOLR_USER in the install_solr_service.sh file
 %define solr_user solr
 # matches SOLR_PORT in the install_solr_service.sh file
@@ -78,6 +80,8 @@ from the official website in RPM form. It includes embedded Jetty.
 %setup -q -b 0 -n solr-%{solr_version}
 # Copy SystemD service definition to SOURCES... 
 cp -p %{_topdir}/../extra/%{solr_service} %{_builddir}/
+# Copy over configuration to create /run/solr
+cp -p %{_topdir}/../extra/solr.conf %{_builddir}/
 
 # Do some substitutions in scripts and configs to reflect constants defined in this spec file.
 # Substitutions in place of patches will make maintenance easier.
@@ -116,6 +120,10 @@ sed -i'' 's|RPM_RUN_DIR|%{solr_run_dir}|g' $systemd_unit_file
 sed -i'' 's|RPM_BIN_DIR|%{solr_bin_dir}|g' $systemd_unit_file
 sed -i'' 's|RPM_INSTALL_DIR|%{solr_install_link}|g' $systemd_unit_file
 
+# Update path in tmp file definition
+tmpdir_definition="%{_builddir}/solr.conf"
+sed -i'' 's|RPM_RUN_DIR|%{solr_run_dir}|g' $tmpdir_definition
+
 # Because we are not packaging dist and 'post' script depends on it,
 # change the path of solr-core.*.jar to the one that is packaged here.
 # Source code analysis shows the util class used by 'post' script is
@@ -136,7 +144,8 @@ for dir in \
   %{solr_config_dir} \
   %{solr_bin_dir} \
   %{solr_env_dir} \
-  %{solr_service_dir}
+  %{solr_service_dir} \
+  %{solr_tmpfiles_dir}
 do
   %__install -d "%{buildroot}$dir"
 done
@@ -164,6 +173,10 @@ rm -rf $rpmtree_solr_dir/solr
 
 # install the systemd unit definition to /lib/systemd/system (works both on Debian and CentOS)
 %__install -m0744 %{_builddir}/%{solr_service} "%{buildroot}%{solr_service_dir}/"
+
+# install the systemd definition to /usr/lib/tmpfiles.d (works both on Debian and CentOS)
+# to create /run/solr on system start.
+%__install -m0744 %{_builddir}/solr.conf "%{buildroot}%{solr_tmpfiles_dir}/"
 
 # copy licenses and other text files.
 cp -Rp $solr_root/licenses %{buildroot}%{solr_install_dir}/
@@ -225,11 +238,11 @@ if [ "$1" == 0 ]; then
         %{solr_run_dir} \
         %{solr_data_dir} \
         %{solr_config_dir} \
+        %{solr_tmpfiles_dir}/solr.conf \
         %{solr_bin_dir}/solr \
         %{solr_bin_dir}/post \
         %{solr_bin_dir}/oom_solr.sh \
-        %{solr_env_dir}/solr.in.sh \
-        %{solr_service_dir}/%{solr_service}
+        %{solr_env_dir}/solr.in.sh 
     do
       echo "Removing $dir"
       rm -rf $dir
@@ -251,6 +264,7 @@ exit 0
 %{solr_data_dir}
 %{solr_install_dir}
 %{solr_config_dir}
+%attr(0644,root,root) %{solr_tmpfiles_dir}/solr.conf
 %attr(0644,%{solr_user},%{solr_user}) %{solr_service_dir}/%{solr_service}
 %attr(0644,%{solr_user},%{solr_user}) %{solr_env_dir}/solr.in.sh
 %attr(0755,%{solr_user},%{solr_user}) %{solr_bin_dir}/solr
@@ -259,6 +273,9 @@ exit 0
 # No need to mention config files as we handle them in upgrades explicitly.
 
 %changelog
+
+* Wed Nov 15 2017 talk@devghai.com
+- Added config to /usr/lib/tmpfiles.d to create /run/solr on startup
 
 * Wed Feb 22 2017 talk@devghai.com
 - Splitting data and core config directories
