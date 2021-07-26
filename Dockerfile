@@ -54,4 +54,4 @@ ARG SOLR_X_Y_Z_VERSION
 ARG RPM_REL
 
 COPY --from=builder /tmp/solr-$SOLR_X_Y_Z_VERSION-rpm /tmp/solr-$SOLR_X_Y_Z_VERSION-rpm
-RUN yum install -y /tmp/solr-$SOLR_X_Y_Z_VERSION-rpm/solr-$SOLR_X_Y_Z_VERSION.*.noarch.rpm
+RUN yum install -y /tmp/solr-$SOLR_X_Y_Z_VERSION-rpm/solr-server-$SOLR_X_Y_Z_VERSION-*.noarch.rpm
