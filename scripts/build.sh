@@ -1,5 +1,7 @@
 #!/bin/bash -e
 
+# Copyright © 2021 Trevor Turner
+# Copyright © 2017 meowtochondria @ GitHub
 # Copyright © 2015 Jason Stafford
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -52,72 +54,64 @@ else
   exit $EX_USAGE
 fi
 
-current_dir=$(dirname ${0})
-rpmbuild_path=$(realpath $current_dir/rpmbuild)
+rpmbuild_path="$HOME/rpmbuild"
 sources_path="$rpmbuild_path/SOURCES"
 apache_archives='http://archive.apache.org/dist/lucene/solr/'
 mirrors='/tmp/solr_mirrors.html'
 archive="solr-$SOLR_VERSION.tgz"
 
-# clean the working directories. Do not remove SOURCES dir if it is already there.
-for dir in BUILD RPMS SRPMS BUILDROOT; do
-  rm -rf $rpmbuild_path/$dir || true
-  mkdir -p $rpmbuild_path/$dir
+# Move spec dir to build dir
+cp -R $HOME/solr-rpm/SPECS $rpmbuild_path/
+
+# download the list of mirror sites
+wget -O $mirrors http://www.apache.org/dyn/closer.cgi/lucene/solr/$SOLR_VERSION &>/dev/null
+
+# append the archive site to end of file so that it is tried last if all mirrors fail
+echo "$apache_archives$SOLR_VERSION/" | tee -a $mirrors &>/dev/null
+successfully_downloaded=1
+echo "Trying to download from..."
+for mirror in $(grep -oP "(http.+?$SOLR_VERSION)?" $mirrors | uniq) ; do
+    echo "* $mirror"
+    # wget fails when there is a 404 and the script ends, even in subshell ( using $() )
+    # Using && and || to capture success and failure respectively.
+    # some mirrors automatically redirect to latest version. using --max-redirect=0 to avoid that.
+    wget --max-redirect=0 -O $sources_path/$archive $mirror/$archive &>/dev/null && successfully_downloaded=0 || successfully_downloaded="$?"
+    [ "$successfully_downloaded" -eq 0 ] && break
 done
 
-mkdir -p $sources_path
-# Move spec dir to build dir
-cp -R $current_dir/SPECS $rpmbuild_path/
-
-if [ ! -f "$sources_path/$archive" ]; then
-  
-  # download the list of mirror sites
-  wget -O $mirrors http://www.apache.org/dyn/closer.cgi/lucene/solr/$SOLR_VERSION &>/dev/null
-  # append the archive site to end of file so that it is tried last if all mirrors fail
-  echo "$apache_archives$SOLR_VERSION/" | tee -a $mirrors &>/dev/null 
-
-  successfully_downloaded=1
-  echo "Trying to download from..."
-  for mirror in $(grep -oP "(http.+?$SOLR_VERSION)?" $mirrors | uniq) ; do
-      echo "* $mirror"
-      # wget fails when there is a 404 and the script ends, even in subshell ( using $() )
-      # Using && and || to capture success and failure respectively.
-      # some mirrors automatically redirect to latest version. using --max-redirect=0 to avoid that.
-      wget --max-redirect=0 -O $sources_path/$archive $mirror/$archive &>/dev/null && successfully_downloaded=0 || successfully_downloaded="$?"
-      [ "$successfully_downloaded" -eq 0 ] && break
-  done
-  # remove the tmp file.
-  rm $mirrors
-  
-  if [ "$successfully_downloaded" -gt 0 ]; then
-    echo -e "\nCould not download solr from mirrors."
-    echo "You can download the file to $sources_path/$archive and rerun this script."
-    echo "Following versions are available for download and packaging:"
-    curl $apache_archives 2>&1 | grep -oP '[5-9]\.\d\.\d?' | uniq
-    rm -f $sources_path/$archive
-    exit 1
-  fi
+# cleanup and check if download was successful
+rm $mirrors
+if [ "$successfully_downloaded" -gt 0 ]; then
+  echo -e "\nCould not download solr from mirrors."
+  echo "You can download the file to $sources_path/$archive and rerun this script."
+  echo "Following versions are available for download and packaging:"
+  curl $apache_archives 2>&1 | grep -oP '[5-9]\.\d\.\d?' | uniq
+  rm -f $sources_path/$archive
+  exit 1
 fi
 
-# get the SHA1 from Apache directly
-if [ ! -f $sources_path/$archive.sha1 ]; then
-  wget -O $sources_path/$archive.sha1 "$apache_archives$SOLR_VERSION/$archive.sha1"
+# get the SHA512 from Apache directly
+echo "Checking SHA512 hash..."
+if [ ! -f $sources_path/$archive.sha512 ]; then
+  wget -O $sources_path/$archive.sha512 "$apache_archives$SOLR_VERSION/$archive.sha512"
 fi
 
 # verify the integrity of the archive
-# the sha1 file has the file name at the end, so use a regex to just pull the sha1 part out of the file
-SHA1=$(<$sources_path/$archive.sha1)
-[[ $SHA1 =~ ^([0-9a-f]+) ]]
-SHA1="${BASH_REMATCH[1]}"
+# the sha512 file has the file name at the end, so use a regex to just pull the sha512 part out of the file
+SHA512=$(<$sources_path/$archive.sha512)
+[[ $SHA512 =~ ^([0-9a-f]+) ]]
+SHA512="${BASH_REMATCH[1]}"
 
-# use openssl to generate the sha1 for the local archive
-LOCAL_SHA1=$(openssl sha1 $sources_path/$archive)
-# openssl puts the file name at the beginning, so use another regex to pull just the sha1
-[[ $LOCAL_SHA1 =~ ([0-9a-f]+)$ ]]
-LOCAL_SHA1="${BASH_REMATCH[1]}"
+# use openssl to generate the sha512 for the local archive
+LOCAL_SHA512=$(openssl sha512 $sources_path/$archive)
 
-if [ $LOCAL_SHA1 == $SHA1 ]; then
-  echo "SHA1 for $sources_path/$archive checks out: $SHA1"
+# openssl puts the file name at the beginning, so use another regex to pull just the sha512
+[[ $LOCAL_SHA512 =~ ([0-9a-f]+)$ ]]
+LOCAL_SHA512="${BASH_REMATCH[1]}"
+
+# compare with known-good hash and fail if it's incorrect
+if [ $LOCAL_SHA512 == $SHA512 ]; then
+  echo "SHA512 for $sources_path/$archive checks out: $SHA512"
 else
   rm -f $sources_path/solr*
   echo "ERROR! $sources_path/$archive download was not successful (checksum did not match)."
@@ -129,3 +123,9 @@ fi
 # _topdir and _tmppath are magic rpm variables that can be defined in ~/.rpmmacros
 # For ease of reliable builds they are defined here on the command line.
 rpmbuild -ba --define="_topdir $rpmbuild_path" --define="buildroot $rpmbuild_path/BUILDROOT" --define="solr_version $SOLR_VERSION" --define="rpm_release $RPM_RELEASE" $rpmbuild_path/SPECS/solr-server.spec
+
+# Copy built packages to an easy to get at location
+DEST_DIR=/tmp/solr-${SOLR_X_Y_Z_VERSION}-rpm
+mkdir -p ${DEST_DIR}
+cp ~/rpmbuild/RPMS/noarch/* ${DEST_DIR}
+cp ~/rpmbuild/SRPMS/* ${DEST_DIR}

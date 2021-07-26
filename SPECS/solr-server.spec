@@ -1,3 +1,5 @@
+# Copyright (c) 2021 Trevor Turner
+# Copyright (c) 2017 meowtochondria @ GitHub
 # Copyright (c) 2015 Jason Stafford
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,12 +31,12 @@
 %define solr_install_dir %{solr_install_link}-%{solr_version}
 # path where solr will log.
 %define solr_log_dir /var/log/solr
-# Rationale: http://www.pathname.com/fhs/pub/fhs-2.3.html#SRVDATAFORSERVICESPROVIDEDBYSYSTEM
-%define solr_data_dir /srv/solr
+# path where solr stores its data
+%define solr_data_dir /var/lib/solr
 # path where solr configurations will be stored
 %define solr_config_dir /etc/solr
 # binary files that allow us to control solr
-%define solr_bin_dir /usr/local/bin
+%define solr_bin_dir /usr/bin
 # path where runtime files (like PID file) will be located
 %define solr_run_dir /run/solr
 # directory for holding file that contains environment variables
@@ -78,17 +80,15 @@ from the official website in RPM form. It includes embedded Jetty.
 
 %prep
 %setup -q -b 0 -n solr-%{solr_version}
-# Copy SystemD service definition to SOURCES... 
-cp -p %{_topdir}/../extra/%{solr_service} %{_builddir}/
-# Copy over configuration to create /run/solr
-cp -p %{_topdir}/../extra/solr.conf %{_builddir}/
+# Copy SystemD service / tmpfile config to SOURCES
+cp -r %{_topdir}/../solr-rpm/systemd/* %{_builddir}
 
 # Do some substitutions in scripts and configs to reflect constants defined in this spec file.
 # Substitutions in place of patches will make maintenance easier.
 solr_env_file='%{_builddir}/solr-%{solr_version}/bin/solr.in.sh'
 sed -i'' 's|^#SOLR_PID_DIR.*$|SOLR_PID_DIR="%{solr_run_dir}"|g' $solr_env_file
 sed -i'' 's|^#SOLR_HOME.*$|SOLR_HOME="%{solr_config_dir}"|g' $solr_env_file
-sed -i'' 's|^#LOG4J_PROPS.*$|LOG4J_PROPS="%{solr_config_dir}/log4j.properties"|g' $solr_env_file
+#sed -i'' 's|^#LOG4J_PROPS.*$|LOG4J_PROPS="%{solr_config_dir}/log4j.properties"|g' $solr_env_file
 sed -i'' 's|^#SOLR_LOGS_DIR.*$|SOLR_LOGS_DIR="%{solr_log_dir}"|g' $solr_env_file
 sed -i'' 's|^#SOLR_PORT.*$|SOLR_PORT="%{solr_port}"|g' $solr_env_file
 
@@ -150,23 +150,25 @@ do
   %__install -d "%{buildroot}$dir"
 done
 
-solr_root="%{_builddir}/solr-%{solr_version}"
 # install the main solr package in solr_install_dir
+solr_root="%{_builddir}/solr-%{solr_version
 cp -Rp "$solr_root/server" "%{buildroot}%{solr_install_dir}/"
 
 # Bin files/scripts.
 # Do not copy Windows specific things and files that will not be living in bin folder.
-for file in oom_solr.sh post solr; do
+for file in oom_solr.sh post postlogs solr; do
   cp -Rp "$solr_root/bin/$file" "%{buildroot}%{solr_bin_dir}/$file"
 done
 
 # Consolidate Solr config. (this does not handle jetty config)
 rpmtree_solr_dir="%{buildroot}%{solr_install_dir}/server"
 cp -p $solr_root/bin/solr.in.sh "%{buildroot}%{solr_env_dir}/"
-mv $rpmtree_solr_dir/resources/log4j.properties "%{buildroot}%{solr_config_dir}/"
+#mv $rpmtree_solr_dir/resources/log4j.properties "%{buildroot}%{solr_config_dir}/"
+
 # Move the configs from server/solr to solr_config_dir
 mv "$rpmtree_solr_dir/solr/zoo.cfg" "%{buildroot}%{solr_config_dir}/"
 mv "$rpmtree_solr_dir/solr/solr.xml" "%{buildroot}%{solr_config_dir}/"
+
 # Remove the solr folder from $solr_root/server because it is empty at this 
 # point and will not be used.
 rm -rf $rpmtree_solr_dir/solr
@@ -241,6 +243,7 @@ if [ "$1" == 0 ]; then
         %{solr_tmpfiles_dir}/solr.conf \
         %{solr_bin_dir}/solr \
         %{solr_bin_dir}/post \
+        %{solr_bin_dir}/postlogs \
         %{solr_bin_dir}/oom_solr.sh \
         %{solr_env_dir}/solr.in.sh 
     do
@@ -269,10 +272,14 @@ exit 0
 %attr(0644,%{solr_user},%{solr_user}) %{solr_env_dir}/solr.in.sh
 %attr(0755,%{solr_user},%{solr_user}) %{solr_bin_dir}/solr
 %attr(0755,%{solr_user},%{solr_user}) %{solr_bin_dir}/post
+%attr(0755,%{solr_user},%{solr_user}) %{solr_bin_dir}/postlogs
 %attr(0755,%{solr_user},%{solr_user}) %{solr_bin_dir}/oom_solr.sh
 # No need to mention config files as we handle them in upgrades explicitly.
 
 %changelog
+* Mon Jul 26 2021 turnertg@uw.edu
+- Updated to support latest solr (8.9.0)
+- Misc cleanup to better integrate with docker build process
 
 * Wed Nov 15 2017 talk@devghai.com
 - Added config to /usr/lib/tmpfiles.d to create /run/solr on startup
