@@ -151,7 +151,7 @@ do
 done
 
 # install the main solr package in solr_install_dir
-solr_root="%{_builddir}/solr-%{solr_version}
+solr_root="%{_builddir}/solr-%{solr_version}"
 cp -Rp "$solr_root/server" "%{buildroot}%{solr_install_dir}/"
 
 # Bin files/scripts.
