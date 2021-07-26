@@ -48,16 +48,10 @@ RUN /home/builder/solr-rpm/scripts/build.sh $SOLR_X_Y_Z_VERSION $RPM_REL
 # tester image
 #
 
-#FROM base AS tester
+FROM base AS tester
 
-#ARG RUBY_X_Y_VERSION
+ARG SOLR_X_Y_Z_VERSION
+ARG RPM_REL
 
-#COPY --from=builder /tmp/ruby-$RUBY_X_Y_VERSION-rpm /tmp/ruby-$RUBY_X_Y_VERSION-rpm
-#RUN yum install -y /tmp/ruby-$RUBY_X_Y_VERSION-rpm/ruby-$RUBY_X_Y_VERSION.*.$(uname -m).rpm
-
-# test for passenger dependency checks
-#RUN yum install -y pygpgme curl epel-release yum-utils
-#RUN yum-config-manager --enable epel
-#RUN curl --fail -sSLo /etc/yum.repos.d/passenger.repo https://oss-binaries.phusionpassenger.com/yum/definitions/el-passenger.repo
-#RUN yum update -y
-#RUN yum install -y mod_passenger
+COPY --from=builder /tmp/solr-$SOLR_X_Y_Z_VERSION-rpm /tmp/solr-$SOLR_X_Y_Z_VERSION-rpm
+RUN yum install -y /tmp/solr-$SOLR_X_Y_Z_VERSION-rpm/solr-$SOLR_X_Y_Z_VERSION.*.noarch.rpm
