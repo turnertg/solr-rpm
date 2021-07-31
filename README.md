@@ -9,13 +9,11 @@ RPM packaging instructions and scripts to package Solr server for
 
 Code to build an RPM for Apache Solr 8.x.x+ on Red Hat and derivative OSes.
 
-To use, first setup your development environment by running
+To use, first setup your development environment for docker or podman containers. 
+Once that is done you can build an RPM by running something to this effect and retrieving the
+artifact from `/tmp/solr-VERSION-rpm` on the final container.
 
-    sudo ./setup.sh
-
-Once that is done you can build an RPM by running
-
-    ./build.sh 8.9.0 mycompany
+    sudo docker build --network=dlan --build-arg="SOLR_X_Y_Z_VERSION=8.9.0" --build-arg="RPM_REL=2" -t turnertg/solr-rpm:centos7 -f Dockerfile .
 
 Install the built RPM using
 
