@@ -16,7 +16,7 @@
 #
 
 FROM centos:7 AS base
-MAINTAINER turnertg
+MAINTAINER deploymentdog
 
 # setup
 RUN yum install -y rpm-build tar wget openssl coreutils

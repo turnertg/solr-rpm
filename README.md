@@ -13,7 +13,7 @@ To use, first setup your development environment for docker or podman containers
 Once that is done you can build an RPM by running something to this effect and retrieving the
 artifact from `/tmp/solr-VERSION-rpm` on the final container.
 
-    sudo docker build --network=dlan --build-arg="SOLR_X_Y_Z_VERSION=8.9.0" --build-arg="RPM_REL=2" -t turnertg/solr-rpm:centos7 -f Dockerfile .
+    sudo docker build --network=dlan --build-arg="SOLR_X_Y_Z_VERSION=8.9.0" --build-arg="RPM_REL=2" -t deploymentdog/solr-rpm:centos7 -f Dockerfile .
 
 Install the built RPM using
 
@@ -75,6 +75,7 @@ needed in enterprise deployments.
 4. Code in this repo has been tested on CentOS 7 (2009) to package 8.9.x Solr.
 Older versions are untested and unsupported. Please feel free to make
 pull requests for bugs that you find. Ongoing support is not guaranteed.
+5. I'll eventually mirror this to Docker hub when I have time for further ease of building.
 
 ## License
 
