@@ -7,7 +7,7 @@ RPM packaging instructions and scripts to package Solr server for
 
 ## Usage
 
-Code to build an RPM for Apache Solr 5.x.x+ on Red Hat and derivative OSes.
+Code to build an RPM for Apache Solr 8.x.x+ on Red Hat and derivative OSes.
 
 To use, first setup your development environment by running
 
@@ -15,16 +15,14 @@ To use, first setup your development environment by running
 
 Once that is done you can build an RPM by running
 
-    ./build.sh 5.3.0 mycompany
+    ./build.sh 8.9.0 mycompany
 
 Install the built RPM using
 
-    sudo yum install -y /path/to/solr.rpm
+    sudo yum localinstall -y /path/to/solr.rpm
 
 By default, the solr service is not started as the user might want to make
-some changes to configs or cores. It is, however, registered to automatically
-start when the machine establishes network connection during boot. You can
-start the service as follows
+some changes to configs or cores. You can start the service as follows
 
     sudo systemctl start solr-server
 
@@ -32,7 +30,11 @@ And stop it using
 
     sudo systemctl stop solr-server
 
-The `solr` and `post` scripts are installed to `/usr/local/bin`, and are
+To allow solr to start on system startup, ensure you *enable* the service
+    
+    sudo systemctl enable solr-server
+
+The `solr`, `post`, and `postlog` scripts are installed to `/usr/bin`, and are
 expected to be available on CLI like any other application. For example, you
 can check solr health using
 
@@ -50,14 +52,12 @@ installation.
 
 1. All configs (except that of embeded Jetty), including cores,
 lives in `/etc/solr`. No example cores are installed or configured.
-2. Unlike the distribution, data lives in `/srv/solr` so that you can have
+2. Unlike the distribution, data lives in `/var/lib/solr` so that you can have
 configs completely separate from data. This will allow you to have data on
-some other drive/partition, just by mounting it on `/srv`. Upstream Solr
+some other drive/partition, just by mounting it on `/var`. Upstream Solr
 distribution tightly couples where cores' config and corresponding data live.
 3. Constants/environment variables are defined in `/etc/default/solr.in.sh`.
-4. SystemD definition is at `/lib/systemd/system/solr-server.service`.
-5. Binaries live in `/usr/local/solr-<version>` with `/usr/local/solr`
-pointing to it as a symlink.
+4. Binaries live in `/usr/share/solr-<version>` .
 6. `solr` and `post` scripts are installed to `/usr/local/bin`.
 Depending on your `PATH` variable, these scripts will be available after
 installation as system wide commands on CLI.
@@ -74,15 +74,9 @@ installation while making us a little impervious to upstream changes.
 from official Solr archive. The full distribution contains full javadocs in
 HTML, bunch of plugins, distribution JARs and examples that are normally not
 needed in enterprise deployments.
-4. Code in this repo has been tested on CentOS 7.3 to package 6.4.x Solr.
-Packaging 5.x.x should work, but has not been tested. Please feel free to make
+4. Code in this repo has been tested on CentOS 7 (2009) to package 8.9.x Solr.
+Older versions are untested and unsupported. Please feel free to make
 pull requests for bugs that you find. Ongoing support is not guaranteed.
-5. The spec file currently puts Java 1.8 in dependencies. If you are packaging
-older versions, it might be better to change that to whatever is applicable
-for that release.
-6. Does not adhere to best practices. Some refactoring is needed. See:
-    - https://fedoraproject.org/wiki/Packaging:Java?rd=Packaging/Java
-    - https://fedoraproject.org/wiki/Packaging:Scriptlets?rd=Packaging:ScriptletSnippets
 
 ## License
 
