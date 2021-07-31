@@ -20,7 +20,7 @@ RPMS/
 SRPMS/
 tmp/
 SOURCES/
+rpmbuild/
 
 # Ignore Visual Studio Code files.
 .vscode
-rpmbuild/

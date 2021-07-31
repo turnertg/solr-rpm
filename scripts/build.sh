@@ -1,7 +1,5 @@
 #!/bin/bash -e
 
-# Copyright © 2021 Trevor Turner
-# Copyright © 2017 meowtochondria @ GitHub
 # Copyright © 2015 Jason Stafford
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -54,6 +52,7 @@ else
   exit $EX_USAGE
 fi
 
+# Set some necessary variables for grabbing the source
 rpmbuild_path="$HOME/rpmbuild"
 sources_path="$rpmbuild_path/SOURCES"
 apache_archives='http://archive.apache.org/dist/lucene/solr/'
