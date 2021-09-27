@@ -45,7 +45,7 @@ Source0:        solr-%{solr_version}.tgz
 URL:            http://lucene.apache.org/solr/
 Group:          System Environment/Daemons
 License:        Apache License, Version 2.0
-Requires:       java-1.8.0-openjdk-headless, systemd, lsof, gawk, coreutils, shadow-utils
+Requires:       java-11-openjdk-headless, systemd, lsof, gawk, coreutils, shadow-utils
 BuildArch:      noarch
 BuildRequires:  tar, sed, coreutils
 Vendor:         Apache Software Foundation
@@ -207,6 +207,9 @@ fi
 %config(noreplace) %{solr_config_dir}/zoo.cfg
 
 %changelog
+* Mon Sep 13 2021 turnertg@uw.edu
+- It's more sensible to require OpenJDK 11 instead of 8, solr doesn't extensively test against 8 anymore
+
 * Fri Jul 30 2021 turnertg@uw.edu
 - Removed some customization for some standard and well-known systemd paths
 - Removed ability to concurrently install several versions of solr - now obsoletes and upgrades
