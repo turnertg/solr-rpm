@@ -214,7 +214,7 @@ fi
 - Rework of insecure permissions, lots of stuff was previously owned by solr when it shouldn't have been
 - Add contrib plugins for cores that request them, may split into solr-contrib in the future, subpackages are ugly
 - Restructured environment and paths to be more compliant with what solr considers a correct dir layout
-- Removed env path variable - use %{solr_config_dir}/.solr.in.sh; %{solr_install_dir}/solr.in.sh is dist/default
+- Removed env path variable - use %{solr_data_dir}/.solr.in.sh; %{solr_install_dir}/solr.in.sh is dist/default
 - Fixed issues with bin/solr because the default/dist server config was previously removed
 
 * Mon Sep 13 2021 turnertg@uw.edu
