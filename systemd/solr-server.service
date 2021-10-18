@@ -9,9 +9,9 @@ Conflicts=shutdown.target
 
 [Service]
 # Pass some environment variables to the process, although the script seems to
-# include them manually.
-EnvironmentFile=RPM_ENV_DIR/solr.in.sh
-Environment="SOLR_INCLUDE=RPM_ENV_DIR/solr.in.sh"
+# include them manually if located at certain location (see top of 'solr' script)
+EnvironmentFile=RPM_INSTALL_DIR/solr.in.sh
+-EnvironmentFile=RPM_CONF_DIR/.solr.in.sh
 
 # Forking because script starts the main process.
 Type=forking

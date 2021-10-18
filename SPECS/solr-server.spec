@@ -18,19 +18,17 @@
 %define __jar_repack %{nil}
 
 # path where solr will be installed
-%define solr_install_dir /usr/share/solr-%{solr_version}
+%define solr_install_dir /usr/share/solr
 # path where solr will log
 %define solr_log_dir /var/log/solr
 # path where solr stores its data
-%define solr_data_dir /var/lib/solr
+%define solr_data_dir /var/solr
 # path where solr configurations will be stored
 %define solr_config_dir /etc/solr
 # binary files that allow us to control solr
 %define solr_bin_dir /usr/bin
 # path where runtime files (like PID file) will be located
 %define solr_run_dir /run/solr
-# directory for holding file that contains environment variables
-%define solr_env_dir /etc/default
 # matches SOLR_USER in the install_solr_service.sh file
 %define solr_user solr
 # matches SOLR_PORT in the install_solr_service.sh file
@@ -68,11 +66,11 @@ cp -r %{_topdir}/../solr-rpm/systemd/* %{_builddir}
 # Do some substitutions in scripts and configs to reflect constants defined in this spec file.
 # Substitutions in place of patches will make maintenance easier.
 solr_env_file='%{_builddir}/solr-%{solr_version}/bin/solr.in.sh'
-sed -i'' 's|^#SOLR_PID_DIR.*$|SOLR_PID_DIR="%{solr_run_dir}"|g' $solr_env_file
-sed -i'' 's|^#SOLR_HOME.*$|SOLR_HOME="%{solr_config_dir}"|g' $solr_env_file
-sed -i'' 's|^#SOLR_LOGS_DIR.*$|SOLR_LOGS_DIR="%{solr_log_dir}"|g' $solr_env_file
-sed -i'' 's|^#SOLR_PORT.*$|SOLR_PORT="%{solr_port}"|g' $solr_env_file
-sed -i'' 's|^#SOLR_DATA_HOME.*$|SOLR_DATA_HOME="%{solr_data_dir}"|g' $solr_env_file
+sed -i 's|^#SOLR_PID_DIR.*$|SOLR_PID_DIR="%{solr_run_dir}"|g' $solr_env_file
+sed -i 's|^#SOLR_HOME.*$|SOLR_HOME="%{solr_config_dir}"|g' $solr_env_file
+sed -i 's|^#SOLR_LOGS_DIR.*$|SOLR_LOGS_DIR="%{solr_log_dir}"|g' $solr_env_file
+sed -i 's|^#SOLR_PORT.*$|SOLR_PORT="%{solr_port}"|g' $solr_env_file
+sed -i 's|^#SOLR_DATA_HOME.*$|SOLR_DATA_HOME="%{solr_data_dir}"|g' $solr_env_file
 
 # Append DEFAULT_SERVER_DIR to solr_env_file so that embedded tools can work.
 # It is not there in env file supplied by the package and is hard coded to be
@@ -84,21 +82,20 @@ echo -e 'DEFAULT_SERVER_DIR="%{solr_install_dir}/server"\n' | tee -a $solr_env_f
 # and value of SOLR_TIP is supplied to -Dsolr.install.dir during startup.
 echo -e '\n# Directory where solr is installed.' | tee -a $solr_env_file
 echo -e 'SOLR_TIP="%{solr_install_dir}"\n' | tee -a $solr_env_file
-
 # Change the location of oom_solr.sh when starting up solr in 'solr' script.
 sed -i 's|$SOLR_TIP/bin/oom_solr.sh|%{solr_bin_dir}/oom_solr.sh|g' bin/solr
 
 # Update paths in service definition
 systemd_unit_file="%{_builddir}/solr-server.service"
-sed -i'' 's|RPM_PORT|%{solr_port}|g' $systemd_unit_file
-sed -i'' 's|RPM_ENV_DIR|%{solr_env_dir}|g' $systemd_unit_file
-sed -i'' 's|RPM_RUN_DIR|%{solr_run_dir}|g' $systemd_unit_file
-sed -i'' 's|RPM_BIN_DIR|%{solr_bin_dir}|g' $systemd_unit_file
-sed -i'' 's|RPM_INSTALL_DIR|%{solr_install_dir}|g' $systemd_unit_file
+sed -i 's|RPM_PORT|%{solr_port}|g' $systemd_unit_file
+sed -i 's|RPM_CONF_DIR|%{solr_config_dir}|g' $systemd_unit_file
+sed -i 's|RPM_RUN_DIR|%{solr_run_dir}|g' $systemd_unit_file
+sed -i 's|RPM_BIN_DIR|%{solr_bin_dir}|g' $systemd_unit_file
+sed -i 's|RPM_INSTALL_DIR|%{solr_install_dir}|g' $systemd_unit_file
 
 # Update path in tmp file definition
 tmpdir_definition="%{_builddir}/solr.conf"
-sed -i'' 's|RPM_RUN_DIR|%{solr_run_dir}|g' $tmpdir_definition
+sed -i 's|RPM_RUN_DIR|%{solr_run_dir}|g' $tmpdir_definition
 
 # Because we are not packaging dist and 'post' script depends on it,
 # change the path of solr-core.*.jar to the one that is packaged here.
@@ -119,7 +116,6 @@ for dir in \
   %{solr_data_dir} \
   %{solr_config_dir} \
   %{solr_bin_dir} \
-  %{solr_env_dir} \
   /usr/lib/systemd/system \
   /usr/lib/tmpfiles.d
 do
@@ -130,6 +126,9 @@ done
 solr_root="%{_builddir}/solr-%{solr_version}"
 cp -Rp "$solr_root/server" "%{buildroot}%{solr_install_dir}/"
 
+# install contrib plugins to solr_install_dir
+cp -Rp "$solr_root/contrib" "%{buildroot}%{solr_install_dir}/"
+
 # Do not copy Windows specific things and files that will not be living in bin folder
 for file in oom_solr.sh post postlogs solr; do
   cp -Rp "$solr_root/bin/$file" "%{buildroot}%{solr_bin_dir}/$file"
@@ -137,15 +136,14 @@ done
 
 # Consolidate Solr config. (this does not handle jetty config)
 rpmtree_solr_dir="%{buildroot}%{solr_install_dir}/server"
-cp -p $solr_root/bin/solr.in.sh "%{buildroot}%{solr_env_dir}/"
+cp -p $solr_root/bin/solr.in.sh "%{buildroot}%{solr_install_dir}/"
 
-# Move the configs from server/solr to solr_config_dir
-mv "$rpmtree_solr_dir/solr/zoo.cfg" "%{buildroot}%{solr_config_dir}/"
-mv "$rpmtree_solr_dir/solr/solr.xml" "%{buildroot}%{solr_config_dir}/"
+# Copy the configs from server/solr to solr_config_dir
+cp -p "$rpmtree_solr_dir/solr/zoo.cfg" "%{buildroot}%{solr_config_dir}/"
+cp -p "$rpmtree_solr_dir/solr/solr.xml" "%{buildroot}%{solr_config_dir}/"
 
-# Remove the solr folder from $solr_root/server because it is empty at this 
-# point and will not be used.
-rm -rf $rpmtree_solr_dir/solr
+# Remove the samples conigset since it's unnecessary in production
+rm -rf $rpmtree_solr_dir/solr/configsets/sample_techproducts_configs
 
 # install the systemd unit definition
 %__install -m0744 %{_builddir}/solr-server.service "%{buildroot}/usr/lib/systemd/system/"
@@ -161,7 +159,7 @@ cp -p  $solr_root/*.txt %{buildroot}%{solr_install_dir}/
 # add the user if it doesn't exist
 id -u %{solr_user} &> /dev/null
 if [ "$?" -ne "0" ]; then
-  useradd --comment "System user to run solr daemon." --home-dir %{solr_data_dir} --system -M --shell /usr/sbin/nologin --user-group %{solr_user}
+  useradd --comment "System user to run solr daemon." --home-dir %{solr_data_dir} --system -M --shell /sbin/nologin --user-group %{solr_user}
 fi
 
 %post
@@ -189,24 +187,36 @@ fi
 %__rm -rf "%{buildroot}"
 
 %files
-%defattr(0644,%{solr_user},%{solr_user},0755)
-%dir %{solr_run_dir}
-%dir %{solr_install_dir}
-%{solr_log_dir}
+# everything that can be owned by root, should be owned by root
+%defattr(0644,root,root,0755)
+# package work dirs but not contents (owned by solr user/group, deny other)
+%dir %attr(0750,%{solr_user},%{solr_user}) %{solr_run_dir}
+%dir %attr(0750,%{solr_user},%{solr_user}) %{solr_log_dir}
+%dir %attr(0750,%{solr_user},%{solr_user}) %{solr_data_dir}
+# solr config (owned by root, readable to solr, deny other)
+%config(noreplace) %attr(0640,-,%{solr_user}) %{solr_config_dir}/solr.xml
+%config(noreplace) %attr(0640,-,%{solr_user}) %{solr_config_dir}/zoo.cfg
+# solr needs to write to config dir so it can create cores 
+%attr(0770,-,%{solr_user}) %{solr_config_dir}
+# systemd config / unit
+/usr/lib/systemd/system/solr-server.service
+/usr/lib/tmpfiles.d/solr.conf
+# executables
+%attr(0755,-,-) %{solr_bin_dir}/solr
+%attr(0755,-,-) %{solr_bin_dir}/post
+%attr(0755,-,-) %{solr_bin_dir}/postlogs
+%attr(0755,-,-) %{solr_bin_dir}/oom_solr.sh
+# everything else
 %{solr_install_dir}
-%{solr_data_dir}
-%{solr_config_dir}
-%attr(0644,root,root) /usr/lib/tmpfiles.d/solr.conf
-%attr(0644,%{solr_user},%{solr_user}) /usr/lib/systemd/system/solr-server.service
-%attr(0644,%{solr_user},%{solr_user}) %{solr_env_dir}/solr.in.sh
-%attr(0755,%{solr_user},%{solr_user}) %{solr_bin_dir}/solr
-%attr(0755,%{solr_user},%{solr_user}) %{solr_bin_dir}/post
-%attr(0755,%{solr_user},%{solr_user}) %{solr_bin_dir}/postlogs
-%attr(0755,%{solr_user},%{solr_user}) %{solr_bin_dir}/oom_solr.sh
-%config(noreplace) %{solr_config_dir}/solr.xml
-%config(noreplace) %{solr_config_dir}/zoo.cfg
 
 %changelog
+* Mon Oct 18 2021 turnertg@uw.edu
+- Rework of insecure permissions, lots of stuff was previously owned by solr when it shouldn't have been
+- Add contrib plugins for cores that request them, may split into solr-contrib in the future, subpackages are ugly
+- Restructured environment and paths to be more compliant with what solr considers a correct dir layout
+- Removed env path variable - use %{solr_config_dir}/.solr.in.sh; %{solr_install_dir}/solr.in.sh is dist/default
+- Fixed issues with bin/solr because the default/dist server config was previously removed
+
 * Mon Sep 13 2021 turnertg@uw.edu
 - It's more sensible to require OpenJDK 11 instead of 8, solr doesn't extensively test against 8 anymore
 
