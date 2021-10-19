@@ -70,7 +70,7 @@ the things go.
 that are replaced with constants from spec file. The same constants are
 used to set values in `solr.in.sh`. This makes it easy to reorganize
 installation while making us a little impervious to upstream changes.
-3. This spec file only packages the `server`, `licenses` and `bin` directories
+3. This spec file only packages the `server`, `licenses`, `contrib`, and `bin` directories
 from official Solr archive. The full distribution contains full javadocs in
 HTML, bunch of plugins, distribution JARs and examples that are normally not
 needed in enterprise deployments.
