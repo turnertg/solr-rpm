@@ -102,7 +102,10 @@ sed -i 's|RPM_RUN_DIR|%{solr_run_dir}|g' $tmpdir_definition
 # Source code analysis shows the util class used by 'post' script is
 # there in solr-core in server too.
 sed -i 's|"$SOLR_TIP/dist"|%{solr_install_dir}/server/solr-webapp/webapp/WEB-INF/lib|g' bin/post
- 
+
+# Append %{solr_config_dir} to bin/solr so it has include precedence over /usr/share/solr
+sed -Ei '/^\s+\/usr\/share\/solr\/solr.in.sh \\$/i\               %{solr_config_dir}/solr.in.sh \\' bin/solr
+
 %build
 
 %install
@@ -193,11 +196,11 @@ fi
 %dir %attr(0750,%{solr_user},%{solr_user}) %{solr_run_dir}
 %dir %attr(0750,%{solr_user},%{solr_user}) %{solr_log_dir}
 %dir %attr(0750,%{solr_user},%{solr_user}) %{solr_data_dir}
-# solr config (owned by root, readable to solr, deny other)
-%config(noreplace) %attr(0640,-,%{solr_user}) %{solr_config_dir}/solr.xml
-%config(noreplace) %attr(0640,-,%{solr_user}) %{solr_config_dir}/zoo.cfg
 # solr needs to write to config dir so it can create cores 
 %attr(0770,-,%{solr_user}) %{solr_config_dir}
+# solr config files (owned by root, readable to solr, deny other)
+%config(noreplace) %attr(0640,-,%{solr_user}) %{solr_config_dir}/solr.xml
+%config(noreplace) %attr(0640,-,%{solr_user}) %{solr_config_dir}/zoo.cfg
 # systemd config / unit
 /usr/lib/systemd/system/solr-server.service
 /usr/lib/tmpfiles.d/solr.conf
@@ -214,7 +217,7 @@ fi
 - Rework of insecure permissions, lots of stuff was previously owned by solr when it shouldn't have been
 - Add contrib plugins for cores that request them, may split into solr-contrib in the future, subpackages are ugly
 - Restructured environment and paths to be more compliant with what solr considers a correct dir layout
-- Removed env path variable - use %{solr_config_dir}/.solr.in.sh; %{solr_install_dir}/solr.in.sh is dist/default
+- Removed env path variable - use %{solr_config_dir}/solr.in.sh; %{solr_install_dir}/solr.in.sh is dist/default
 - Fixed issues with bin/solr because the default/dist server config was previously removed
 
 * Mon Sep 13 2021 turnertg@uw.edu
