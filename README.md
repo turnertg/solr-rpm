@@ -13,7 +13,7 @@ To use, first setup your development environment for docker or podman containers
 Once that is done you can build an RPM by running something to this effect and retrieving the
 artifact from `/tmp/solr-VERSION-rpm` on the final container.
 
-    sudo docker build --network=dlan --build-arg="SOLR_X_Y_Z_VERSION=8.9.0" --build-arg="RPM_REL=2" -t deploymentdog/solr-rpm:centos7 -f Dockerfile .
+    sudo docker build --network=dlan --build-arg="SOLR_X_Y_Z_VERSION=8.10.1" --build-arg="RPM_REL=1" -t deploymentdog/solr-rpm:centos7 -f Dockerfile .
 
 Install the built RPM using
 
@@ -72,7 +72,7 @@ used to set values in `solr.in.sh`. This makes it easy to reorganize
 installation while making us a little impervious to upstream changes.
 3. This spec file only packages the `server`, `licenses`, `contrib`, and `bin` directories
 from official Solr archive. The full distribution contains full javadocs in
-HTML, bunch of plugins, distribution JARs and examples that are normally not
+HTML, distribution JARs and examples that are normally not
 needed in enterprise deployments.
 4. Code in this repo has been tested on CentOS 7 (2009) to package 8.9.x Solr.
 Older versions are untested and unsupported. Please feel free to make
