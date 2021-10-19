@@ -50,13 +50,15 @@ installation.
 
 1. All configs (except that of embeded Jetty), including cores,
 lives in `/etc/solr`. No example cores are installed or configured.
-2. Unlike the distribution, data lives in `/var/lib/solr` so that you can have
+2. Unlike the distribution, data lives in `/var/solr` so that you can have
 configs completely separate from data. This will allow you to have data on
 some other drive/partition, just by mounting it on `/var`. Upstream Solr
 distribution tightly couples where cores' config and corresponding data live.
-3. Constants/environment variables are defined in `/etc/default/solr.in.sh`.
-4. Binaries live in `/usr/share/solr-<version>` .
-6. `solr` and `post` scripts are installed to `/usr/local/bin`.
+In more recent years, they have allowed for more flexibility in deployment, but
+still, in general, require a tightly-coupled config or a highly customized one.
+3. Constants/environment variables are defined in `/etc/solr/solr.in.sh`.
+4. Binaries live in `/usr/share/solr` .
+6. `solr` and `post` scripts are installed to `/usr/bin`.
 Depending on your `PATH` variable, these scripts will be available after
 installation as system wide commands on CLI.
 
