@@ -17,9 +17,10 @@
 
 FROM centos:7 AS base
 MAINTAINER deploymentdog
+SHELL ["/bin/bash", "-c"]
 
 # setup
-RUN yum install -y rpm-build tar wget openssl coreutils
+RUN yum install -y rpm-build tar wget openssl coreutils ca-certificates
 
 #
 # builder image

@@ -55,7 +55,7 @@ fi
 # Set some necessary variables for grabbing the source
 rpmbuild_path="$HOME/rpmbuild"
 sources_path="$rpmbuild_path/SOURCES"
-apache_archives='http://archive.apache.org/dist/lucene/solr/'
+apache_archives='https://archive.apache.org/dist/lucene/solr/'
 mirrors='/tmp/solr_mirrors.html'
 archive="solr-$SOLR_VERSION.tgz"
 
@@ -63,13 +63,14 @@ archive="solr-$SOLR_VERSION.tgz"
 cp -R $HOME/solr-rpm/SPECS $rpmbuild_path/
 
 # download the list of mirror sites
-wget -O $mirrors http://www.apache.org/dyn/closer.cgi/lucene/solr/$SOLR_VERSION &>/dev/null
+wget -O $mirrors https://www.apache.org/dyn/closer.lua/lucene/solr/$SOLR_VERSION
+#&>/dev/null
 
 # append the archive site to end of file so that it is tried last if all mirrors fail
 echo "$apache_archives$SOLR_VERSION/" | tee -a $mirrors &>/dev/null
 successfully_downloaded=1
 echo "Trying to download from..."
-for mirror in $(grep -oP "(http.+?$SOLR_VERSION)?" $mirrors | uniq) ; do
+for mirror in $(grep -oP "(https.+?$SOLR_VERSION)?" $mirrors | uniq) ; do
     echo "* $mirror"
     # wget fails when there is a 404 and the script ends, even in subshell ( using $() )
     # Using && and || to capture success and failure respectively.
